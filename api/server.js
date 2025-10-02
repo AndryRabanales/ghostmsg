@@ -1,64 +1,67 @@
-const Fastify = require('fastify');
-const cors = require('@fastify/cors');
-const { PrismaClient } = require('@prisma/client');
+// server.js
+const Fastify = require("fastify");
+const cors = require("@fastify/cors");
+const helmet = require("@fastify/helmet");
+const rateLimit = require("@fastify/rate-limit");
+
+// Plugins y rutas
+const authPlugin = require("./plugins/auth");
+const creatorsRoutes = require("./routes/creators");
+const chatsRoutes = require("./routes/chats");
+const messagesRoutes = require("./routes/messages");
+const publicRoutes = require("./routes/public"); // 👈 nuevo import
 
 const fastify = Fastify({ logger: true });
 
+/* ======================
+   Seguridad básica
+   ====================== */
+fastify.register(helmet);
+
 fastify.register(cors, {
-  origin: '*', // o tu URL de producción para restringirlo
+  origin: [
+    "http://localhost:3000", // dev local
+    "https://tu-front.vercel.app", // ejemplo producción
+    process.env.FRONTEND_URL || "https://ghost-web-two.vercel.app/",
+  ],
+  methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
 });
 
-const prisma = new PrismaClient();
-
-// Crear predicción (igual que antes)
-fastify.post('/messages', async (request, reply) => {
-  const { content, userId } = request.body;
-  const message = await prisma.message.create({
-    data: { content, userId } // status queda PENDING por defecto
-  });
-  reply.code(201).send(message);
+fastify.register(rateLimit, {
+  max: 60, // 60 req/min por IP
+  timeWindow: "1 minute",
 });
 
-// Contar predicciones bloqueadas (igual que antes)
-fastify.get('/messages/count', async (request, reply) => {
-  const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
-  const locked = await prisma.message.count({
-    where: { createdAt: { gt: cutoff } } // más nuevos = bloqueados
-  });
-  reply.send({ locked });
-});
+/* ======================
+   Plugins
+   ====================== */
+fastify.register(authPlugin);
 
-// NUEVO: Listar predicciones desbloqueadas (>24h)
-fastify.get('/messages', async (request, reply) => {
-  const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
-  const messages = await prisma.message.findMany({
-    where: { createdAt: { lte: cutoff } },
-    orderBy: { createdAt: 'desc' }
-  });
-  reply.send(messages);
-});
+/* ======================
+   Rutas
+   ====================== */
+fastify.register(creatorsRoutes);
+fastify.register(chatsRoutes);
+fastify.register(messagesRoutes);
+fastify.register(publicRoutes); // 👈 aquí lo registras
 
-// NUEVO: Marcar predicción cumplida o no cumplida
-fastify.patch('/messages/:id', async (request, reply) => {
-  const { status } = request.body; // 'FULFILLED' o 'NOT_FULFILLED'
-  if (!['FULFILLED', 'NOT_FULFILLED'].includes(status)) {
-    return reply.code(400).send({ error: 'Estado inválido' });
-  }
-  const message = await prisma.message.update({
-    where: { id: request.params.id },
-    data: {
-      seen: true,
-      status // 👈 usa la columna status que añadiste en schema.prisma
-    }
-  });
-  reply.send(message);
-});
+/* ======================
+   Healthcheck
+   ====================== */
+fastify.get("/", async () => ({ status: "API ok" }));
 
+/* ======================
+   Start
+   ====================== */
 const start = async () => {
   try {
-    const port = process.env.PORT || 3001;
-    await fastify.listen({ port, host: '0.0.0.0' });
-    console.log(`Servidor en puerto ${port}`);
+    await fastify.listen({
+      port: process.env.PORT || 3001,
+      host: "0.0.0.0", // necesario para Render
+    });
+    fastify.log.info(
+      `🚀 Servidor corriendo en puerto ${process.env.PORT || 3001}`
+    );
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);
