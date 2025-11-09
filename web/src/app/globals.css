@@ -149,9 +149,9 @@ body::after {
 }
 
 @keyframes input-power-cycle {
-  0%   { border-color: var(--primary-hellfire-red); box-shadow: 0 0 20px var(--primary-hellfire-red), inset 0 0 10px rgba(255, 0, 76, 0.4); }
-  50%  { border-color: var(--secondary-ember-orange); box-shadow: 0 0 30px var(--secondary-ember-orange), inset 0 0 15px rgba(255, 77, 0, 0.5); }
-  100% { border-color: var(--primary-hellfire-red); box-shadow: 0 0 20px var(--primary-hellfire-red), inset 0 0 10px rgba(255, 0, 76, 0.4); }
+  0%   { border-color: var(--primary-hellfire-red); box-shadow: 0 0 20px var(--primary-hellfire-red), inset 0 0 10px rgba(119, 0, 255, 0.4); }
+  50%  { border-color: var(--secondary-ember-orange); box-shadow: 0 0 30px var(--secondary-ember-orange), inset 0 0 15px rgba(104, 0, 231, 0.5); }
+  100% { border-color: var(--primary-hellfire-red); box-shadow: 0 0 20px var(--primary-hellfire-red), inset 0 0 10px rgba(143, 0, 209, 0.4); }
 }
 
 @keyframes blood-pulse {
@@ -253,7 +253,7 @@ body::after {
 }
 .link-input-container:hover {
   border-color: var(--primary-pulse-red);
-  box-shadow: 0 0 20px rgba(255, 0, 76, 0.4);
+  box-shadow: 0 0 20px rgba(214, 67, 254, 0.4);
 }
 
 .link-input-label {
@@ -854,8 +854,11 @@ body::after {
   --accent-data-stream: #000000;
   --text-primary: #f5f5f5;
   --text-secondary: rgba(235, 235, 245, 0.7);
-  --success-glow: rgba(0, 255, 128, 0.4);
-  --success-solid: #00ff80;
+
+--success-glow: rgba(133, 40, 255, 0.796); /* Púrpura claro (rgba de #c9a4ff) */
+--success-solid: #  851aff; /* Púrpura claro sólido */
+
+--font-main: "Orbitron", sans-serif;
   --font-main: "Orbitron", sans-serif;
   --font-mono: "Fira Code", monospace;
   --border-color-faint: rgba(142, 45, 226, 0.3);
@@ -941,7 +944,7 @@ body {
 .form-status-message.success { background: rgba(46, 204, 113, 0.1); border: 1px solid #2ECC71; }
 .form-status-message.error { background: rgba(231, 76, 60, 0.1); border: 1px solid #e74c3c; }
 .form-status-message p { margin: 0; font-weight: bold; }
-.form-status-message.success p { color: #2ECC71; }
+.form-status-message.success p { color: #cc2e2e; }
 .form-status-message.error p { color: #e74c3c; }
 .form-status-message .sub-text {
   margin-top: 10px; font-size: 14px; font-weight: normal; color: rgba(255,255,255,0.8);
@@ -1275,38 +1278,96 @@ body {
 ================================================================================
 */
 
+/*
+================================================================================
+|       SECCIÓN 5.1: ESTRUCTURA DE ITEMS DE CHAT (BANDEJA DE ENTRADA)          |
+================================================================================
+*/
+
+/* Nueva animación para el borde de chats no leídos */
+/*
+================================================================================
+|       SECCIÓN 5.1: ESTRUCTURA DE ITEMS DE CHAT (BANDEJA DE ENTRADA)          |
+================================================================================
+*/
+
+/* Nueva animación para el borde de chats no leídos */
+@keyframes pulse-border {
+  0%, 100% { 
+    border-left-color: var(--glow-accent-crimson);
+    box-shadow: inset 5px 0 15px -5px var(--glow-accent-crimson);
+  }
+  50% { 
+    border-left-color: var(--border-color-strong);
+    box-shadow: inset 3px 0 5px -5px var(--border-color-strong);
+  }
+}
+
 /* Contenedor principal del item de chat */
 .chat-item {
-  /* ... (tu estilo .chat-item existente en la línea 318 ya está bien) ... */
-  /* Asegurémonos de que tenga space-between */
   display: flex;
-  align-items: stretch; /* Hacemos que los hijos ocupen toda la altura */
+  align-items: center; 
   justify-content: space-between;
-  gap: 15px; /* Espacio entre el contenido y el botón */
-  padding: 16px 20px; /* Más padding */
-  margin-bottom: 12px; /* Más separación entre items */
+  gap: 15px; 
+  padding: 10px 20px; /* AJUSTE 1: Padding vertical de 10px */
+  min-height: auto; /* CRÍTICO: La altura no debe ser forzada */
+  margin-bottom: 12px; 
+  background: transparent;
+  border: 1px solid var(--border-color-faint);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 0 10px rgba(157, 0, 255, 0.3);
+}
+.chat-item::before {
+  content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(201, 164, 255, 0.1), transparent);
+  animation: neuron-flash 3.5s linear infinite; opacity: 0; transition: opacity 0.4s ease;
+}
+.chat-item:not(.disabled):hover {
+  transform: translateY(-4px) scale(1.02);
+  background: rgba(40, 40, 60, 0.7);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  border-color: var(--glow-accent-crimson); /* Borde brillante al pasar el mouse */
+}
+.chat-item:not(.disabled):hover::before {
+  opacity: 1; /* Muestra el barrido de luz al pasar el mouse */
 }
 
 /* Estilo para los chats no abiertos (más llamativo) */
 .chat-item.unopened {
   border-left: 3px solid var(--glow-accent-crimson);
   background: linear-gradient(90deg, rgba(142, 45, 226, 0.1), transparent 50%);
+  animation: pulse-border 2.5s ease-in-out infinite; /* Animación pulsante */
+}
+
+/* Estilo para los chats con nueva respuesta (Carmesí) */
+.chat-item.new-reply {
+  padding: 10px 20px; /* Mantiene la consistencia del padding */
+  min-height: auto; 
+  
+  /* Aplica el estilo carmesí */
+  border-left: 3px solid var(--notification-red-base); 
+  background: linear-gradient(90deg, rgba(255, 22, 65, 0.1), transparent 50%);
+  animation: pulse-new-reply 2.5s ease-in-out infinite; 
 }
 
 /* Contenido principal (Alias, Mensaje, Fecha) */
 .chat-item-main {
   display: flex;
   flex-direction: column;
-  justify-content: center; /* Centra verticalmente el texto */
-  gap: 4px; /* Pequeño espacio entre líneas de texto */
-  flex-grow: 1; /* Hace que ocupe el espacio disponible */
-  overflow: hidden; /* Evita que el texto se desborde */
+  justify-content: center; 
+  gap: 4px; /* AJUSTE 2: Espacio suficiente para que el texto sea legible */
+  flex-grow: 1; 
+  overflow: hidden; 
 }
 
 /* Alias del anónimo */
 .chat-item-alias {
   font-weight: 700;
-  font-size: 1.1em; /* 17.6px si la base es 16px */
+  font-size: 1.1em; 
   color: var(--text-primary);
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -1315,13 +1376,12 @@ body {
 
 /* Contenido del último mensaje */
 .chat-item-content {
-  font-size: 0.9em; /* 14.4px */
+  font-size: 0.9em; 
   color: var(--text-secondary);
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
 }
-/* Estilo para el "Tú:" */
 .chat-item-content span {
   color: var(--glow-accent-crimson);
   font-weight: 600;
@@ -1329,7 +1389,7 @@ body {
 
 /* Fecha del último mensaje */
 .chat-item-date {
-  font-size: 0.75em; /* 12px */
+  font-size: 0.75em; 
   color: var(--border-color-strong);
   font-family: var(--font-mono);
   margin-top: 4px;
@@ -1341,28 +1401,33 @@ body {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  flex-shrink: 0; /* Evita que el botón se encoja */
-  padding: 10px 16px;
+  flex-shrink: 0; 
+  padding: 7px 16px; /* AJUSTE 3: Padding vertical compacto */
+  line-height: 1; /* ⬅️ CRÍTICO: Elimina el espacio vertical extra del texto */
   font-size: 14px;
   font-weight: 700;
   border-radius: 12px;
   cursor: pointer;
   border: none;
-  background-color: var(--primary-hellfire-red);
+  /* Fondo con gradiente "espectacular" */
+  background: linear-gradient(90deg, var(--primary-hellfire-red), var(--secondary-ember-orange));
   color: var(--text-primary);
   transition: all 0.3s ease;
-  min-width: 110px; /* Ancho mínimo para consistencia */
+  min-width: 120px; /* Fuerza el ancho para que "Ver" y "Responder" coincidan */
   text-align: center;
+  box-shadow: 0 4px 15px rgba(74, 0, 224, 0.3);
 }
 
 .chat-item-button svg {
+  display: block; /* ⬅️ CRÍTICO: Evita que el SVG interfiera con el line-height */
   transition: transform 0.3s ease;
 }
 
 /* Animación de hover para el botón */
 .chat-item:not(.disabled) .chat-item-button:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 20px var(--primary-hellfire-red);
+  transform: scale(1.05) translateY(-2px);
+  box-shadow: 0 6px 25px rgba(74, 0, 224, 0.5); 
+  filter: brightness(1.2); 
 }
 
 .chat-item:not(.disabled) .chat-item-button:hover svg {
@@ -1378,14 +1443,716 @@ body {
 }
 
 .chat-item.disabled .chat-item-button {
-  background-color: #3a3a4c; /* Un color grisáceo de tu tema */
+  background: #3a3a4c; 
   color: var(--text-secondary);
   cursor: not-allowed;
   animation: none;
   box-shadow: none;
 }
 
+.chat-item.disabled::before {
+  opacity: 0 !important;
+}
+
 /* Oculta el brillo de neón en el item deshabilitado */
 .chat-item.disabled::before {
   opacity: 0 !important;
 }
+/* src/app/globals.css */
+
+/* ... (tus otros estilos) ... */
+
+/*
+================================================================================
+|           SECCIÓN 10: VISTA DE CHAT DEL DASHBOARD (CORREGIDO)                 |
+================================================================================
+*/
+
+/* src/app/globals.css */
+
+/*
+================================================================================
+|           SECCIÓN DE CHAT UNIFICADA (PARA DASHBOARD Y PÚBLICO)               |
+================================================================================
+*/
+
+/* Contenedor principal del chat (el fondo oscuro) */
+.chat-detail-container,
+.public-chat-view {
+  background: rgba(20, 20, 35, 0.7);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  padding: 25px;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  /* Define una altura. Si es la página anónima, ya tiene una altura en línea. */
+  height: 85vh; 
+  max-height: 800px;
+}
+
+/* Ajuste para la vista anónima que define su altura en línea */
+.public-chat-view {
+  height: 600px; 
+  max-height: 80vh;
+}
+
+/* Encabezado del chat (con título y botón "Volver") */
+.chat-header,
+.chat-view-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+.chat-header h3,
+.chat-view-header h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+.back-button {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.3s ease;
+}
+.back-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* src/app/globals.css (dentro de la sección de estilos unificados) */
+
+/*
+================================================================================
+|           SECCIÓN DE CHAT UNIFICADA (ALINEACIÓN CORREGIDA)                   |
+================================================================================
+*/
+
+/* Contenedor de mensajes (la parte con scroll) */
+.chat-messages-container,
+.messages-display {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 0 10px;
+  margin-bottom: 20px;
+}
+
+/* 1. El Wrapper (controla la alineación DERECHA/IZQUIERDA) */
+.message-bubble-wrapper {
+  display: flex;
+  flex-direction: column; 
+  margin-bottom: 15px;
+  max-width: 85%; 
+}
+
+/* El div interno (controla el ANCHO y la ALINEACIÓN DEL ALIAS/TIMESTAMP) */
+.message-bubble-wrapper > div {
+  display: flex;
+  flex-direction: column;
+  width: fit-content;    /* Se estira lo necesario */
+  max-width: 100%;       
+}
+
+/* Wrapper del Creador (Tú en dashboard/Anónimo en vista pública) -> A LA DERECHA */
+.message-bubble-wrapper.creator {
+  align-items: flex-end;   /* Mueve el div interno a la derecha */
+  margin-left: auto;     /* Empuja todo el bloque a la derecha */
+}
+
+/* Wrapper del Anónimo (Anónimo en dashboard/Creador en vista pública) -> A LA IZQUIERDA */
+.message-bubble-wrapper.anon {
+  align-items: flex-start; /* Mueve el div interno a la izquierda */
+  margin-right: auto;    /* Empuja todo el bloque a la izquierda */
+}
+
+/* 2. El Alias (Nombre) - Alineado según el wrapper */
+.message-alias {
+  font-size: 13px;
+  font-weight: bold;
+  margin-bottom: 5px;
+  color: var(--text-secondary);
+  padding: 0 5px;
+}
+.message-bubble-wrapper.creator .message-alias {
+  align-self: flex-end; /* Alinea el nombre "Tú" a la derecha */
+}
+
+/* 3. La Burbuja (controla el color y el RECORTE DE TEXTO) */
+.message-bubble {
+  padding: 10px 15px;
+  border-radius: 18px;
+  color: #fff;
+  line-height: 1.5;
+  word-wrap: break-word; 
+  max-width: 100%;
+}
+
+.message-bubble.creator {
+  background: linear-gradient(90deg, #8e2de2, #4a00e0);
+  border-bottom-right-radius: 4px; /* Recorte para estilo chat */
+}
+
+.message-bubble.anon {
+  background: #3a3a4c;
+  border-bottom-left-radius: 4px; /* Recorte para estilo chat */
+}
+/* Fin de las correcciones de CSS */
+
+/* src/app/globals.css */
+
+/* ... (tus estilos existentes) ... */
+
+/* src/app/globals.css */
+
+/* ... (tus estilos existentes) ... */
+
+/*
+================================================================================
+|       SECCIÓN 11: ENLACE "CREAR TU ESPACIO" (PÁGINA ANÓNIMA)                 |
+================================================================================
+*/
+
+.create-space-link-container {
+  text-align: center;
+  margin-top: 35px; /* Espacio después del formulario anónimo */
+  margin-bottom: 30px; /* Espacio antes de la lista de chats (si existe) */
+  opacity: 0; /* Para la animación */
+}
+
+.create-space-link {
+  display: inline-flex; /* Para alinear el icono y el texto */
+  align-items: center;
+  gap: 8px; /* Espacio entre icono y texto */
+  padding: 10px 18px;
+  background-color: rgba(255, 255, 255, 0.08); /* Fondo sutil */
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  color: var(--glow-accent-crimson); /* Color púrpura claro */
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.create-space-link:hover {
+  background-color: rgba(142, 45, 226, 0.2); /* Fondo púrpura más intenso al pasar el mouse */
+  border-color: var(--glow-accent-crimson);
+  color: #fff; /* Texto blanco al pasar el mouse */
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(142, 45, 226, 0.3);
+}
+
+.create-space-link svg {
+  transition: transform 0.3s ease;
+}
+
+.create-space-link:hover svg {
+  transform: scale(1.1);
+}
+
+/* Reutilizamos la animación de entrada */
+.staggered-fade-in-up {
+  opacity: 0;
+  animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+/* Dentro de src/app/globals.css */
+
+.hearts-container {
+  display: flex;          /* Usa flexbox */
+  justify-content: center;/* Centra los iconos */
+  align-items: center;    /* Alinea verticalmente */
+  gap: 2px;             /* Espacio pequeño entre iconos SVG */
+  /* Quita flex-wrap: nowrap; si lo tenías, ya no es tan crítico con SVG */
+  /* Quita overflow: hidden; si lo tenías */
+}
+
+/* Estilo para los SVG de corazón */
+.heart-svg {
+  width: 1.4rem;  /* Controla el tamaño del SVG (ajústalo) */
+  height: 1.4rem; /* Controla el tamaño del SVG (ajústalo) */
+  color: var(--primary-hellfire-red); /* Color base del corazón (borde y relleno) */
+  transition: all 0.3s ease; /* Transición suave para opacidad/efectos */
+}
+
+/* SVG vacío (solo borde) */
+.heart-svg.empty {
+  fill: none; /* Sin relleno */
+  opacity: 0.3; /* Más transparente */
+  color: var(--text-secondary); /* Color del borde más tenue */
+}
+
+/* SVG lleno (con relleno y animación) */
+.heart-svg.filled {
+  fill: currentColor; /* Relleno con el color base */
+  /* Mantenemos la animación de pulso si la tenías */
+  animation: blood-pulse 1.2s ease-in-out infinite; 
+}
+
+/* Puedes quitar la media query que ajustaba font-size si ya no es necesaria */
+/* O ajustarla para cambiar width/height del SVG si aún lo necesitas */
+/* @media (max-width: 400px) { ... } */
+
+/* src/app/globals.css */
+
+ /* ... tus otros estilos ... */
+
+ /* Indicador de Nuevo Mensaje */
+ .new-reply-indicator {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 3px 8px;
+  background-color: var(--primary-hellfire-red); /* O el color que prefieras */
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  border-radius: 10px;
+  line-height: 1;
+  vertical-align: middle; /* Para alinearlo bien con el texto */
+  animation: pulse-indicator 1.5s infinite;
+}
+
+@keyframes pulse-indicator {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+/* Guía visual para scroll (opcional) */
+@keyframes point-down {
+  0%, 100% { transform: translateY(0); opacity: 1; }
+  50% { transform: translateY(8px); opacity: 0.5; }
+}
+.scroll-cue {
+  text-align: center;
+  margin-top: 15px;
+  color: var(--glow-accent-crimson);
+  font-weight: bold;
+  animation: point-down 1.5s ease-in-out infinite;
+  cursor: default; /* Para que no parezca clickeable */
+}
+
+/* Archivo: andryrabanales/ghost-web/ghost-web-fa157a694c8e70126c81f933e01c047438567622/src/app/globals.css */
+
+/* ... (Al final del archivo) */
+
+/* Indicador de chat aún sin respuesta */
+.unreplied-indicator {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 3px 8px;
+  background-color: #ff1641; /* Gris oscuro para estado neutral */
+  color: rgb(255, 255, 255);
+  font-size: 10px;
+  font-weight: 500; /* Menos negrita que el 'Nuevo Mensaje' */
+  border-radius: 10px;
+  line-height: 1;
+  vertical-align: middle; 
+  /* Animación sutil para indicar espera */
+  animation: none; 
+}
+
+
+/* andryrabanales/ghost-web/ghost-web-39f92d39bc0a587fc148c366b58679842a2167cf/src/app/globals.css */
+
+/* ... (Asegúrate de que estas variables estén definidas) ...
+:root {
+  --success-solid: #00ff80;
+  --success-glow: rgba(0, 255, 128, 0.4);
+  --primary-hellfire-red: #8011e2;
+}
+*/
+
+/*
+================================================================================
+|           SECCIÓN DE ESTILOS PARA NOTIFICACIÓN "new-reply"                   |
+================================================================================
+*/
+
+/* Nueva animación para el borde de chats con nueva respuesta */
+@keyframes pulse-new-reply {
+  0%, 100% { 
+    /* Usa color de éxito para notificar */
+    border-left-color: var(--success-solid); 
+    box-shadow: inset 5px 0 15px -5px var(--success-glow);
+  }
+  50% { 
+    /* Pulso intermedio */
+    border-left-color: var(--primary-hellfire-red);
+    box-shadow: inset 3px 0 5px -5px rgba(255, 255, 255, 0.598);
+  }
+}
+
+/* Estilo para los chats con nueva respuesta del anónimo */
+.chat-item.new-reply {
+  /* Sobrescribe el estilo normal y de unopened */
+  border-left: 3px solid var(--success-solid); 
+  background: linear-gradient(90deg, rgba(0, 255, 128, 0.1), transparent 50%); /* Fondo con brillo verde */
+  animation: pulse-new-reply 2.5s ease-in-out infinite; 
+}
+.chat-item.new-reply:not(.disabled):hover {
+  border-color: var(--success-solid);
+}
+
+/* Estilo para el botón cuando hay nueva respuesta */
+.chat-item.new-reply .chat-item-button {
+  background: linear-gradient(90deg, var(--primary-hellfire-red), var(--secondary-ember-orange)); 
+  color: var(--text-primary); 
+  font-weight: 700; 
+  box-shadow: 0 4px 15px rgba(74, 0, 224, 0.3); 
+}
+
+.chat-item.new-reply .chat-item-button:hover {
+  transform: scale(1.05) translateY(-2px); 
+  box-shadow: 0 6px 25px rgba(74, 0, 224, 0.5); 
+  filter: brightness(1.2); 
+}
+
+/* ... (omitting existing styles) ... */
+
+/*
+================================================================================
+|           SECCIÓN 12: ANIMACIÓN PARA BOTÓN DE CHAT PÚBLICO                   |
+================================================================================
+*/
+
+@keyframes neon-pulse-anon {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 5px var(--glow-accent-crimson), inset 0 0 5px var(--glow-accent-crimson);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px var(--glow-accent-crimson), inset 0 0 10px var(--glow-accent-crimson);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 5px var(--glow-accent-crimson), inset 0 0 5px var(--glow-accent-crimson);
+  }
+}
+
+.pulse-open-anon {
+  animation: neon-pulse-anon 1.5s infinite ease-in-out;
+  border-color: var(--glow-accent-crimson) !important;
+}
+
+.chat-list-item:hover .pulse-open-anon { 
+    /* Detiene la animación de pulso cuando se pasa el ratón y aplica el hover normal */
+    animation-play-state: paused; 
+    transform: translateY(-5px) scale(1.02);
+    /* Forzar los colores de hover definidos en las secciones anteriores (púrpura) */
+    background: #8e2de2 !important; 
+    border-color: #8e2de2 !important;
+}
+
+/*
+================================================================================
+|           SECCIÓN 13: ANIMACIÓN DE "ESPERA" ADICTIVA                         |
+================================================================================
+*/
+
+/* Animación de "respiración" para el texto principal */
+@keyframes subtle-pulse-glow {
+  0%, 100% {
+    opacity: 0.8;
+    text-shadow: 0 0 8px var(--glow-accent-crimson-faint, rgba(201, 164, 255, 0.3));
+  }
+  50% {
+    opacity: 1;
+    text-shadow: 0 0 16px var(--glow-accent-crimson, rgba(201, 164, 255, 0.7));
+  }
+}
+
+/* Animación de "salto" para cada punto (simulando "escribiendo...") */
+@keyframes typing-dot-bounce {
+  0%, 80%, 100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  40% {
+    transform: translateY(-6px); /* Cuánto salta el punto */
+    opacity: 1;
+  }
+}
+
+/* Contenedor del título */
+.waiting-for-reply {
+  /* ... (animación y display: flex ya existentes) ... */
+  display: flex; 
+  justify-content: center; 
+  align-items: center; 
+  animation: subtle-pulse-glow 2.5s ease-in-out infinite;
+
+  /* --- 👇 LÍNEAS AÑADIDAS/MODIFICADAS 👇 --- */
+  flex-wrap: nowrap;     /* Evita que los puntos bajen de línea */
+  white-space: nowrap;  /* Evita que el texto "Espera a que..." se parta */
+  overflow: hidden;     /* Oculta lo que no quepa */
+  text-overflow: ellipsis; /* Pone "..." si el nombre es muy largo */
+}
+
+/* Contenedor de los puntos */
+.waiting-dots {
+  /* display: inline-block; <-- Puedes quitar esto si quieres */
+  flex-shrink: 0; /* <-- AÑADIR: Impide que los puntos colapsen */
+  margin-left: 6px; 
+  position: relative;
+  top: -4px; 
+}
+
+/* Estilo y animación de cada punto */
+.waiting-dots span {
+  display: inline-block;
+  animation: typing-dot-bounce 1.4s infinite;
+  padding: 0 1px;
+  font-weight: 900; /* Puntos más gruesos */
+  font-size: 1.2em; /* Puntos más grandes */
+}
+
+/* Retraso de animación para cada punto, creando el efecto de ola */
+.waiting-dots span:nth-child(1) {
+  animation-delay: 0s;
+}
+.waiting-dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.waiting-dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* src/app/globals.css */
+
+/* ... (pega esto al final de tu archivo) ... */
+
+/*
+================================================================================
+|           SECCIÓN 14: ESTILOS PARA HEADER DE CHAT (ESTADO EN LÍNEA)            |
+================================================================================
+*/
+
+/* Contenedor del header en PublicChatView */
+.chat-view-header {
+  /* Hacemos que el botón (si existiera) y la info se alineen */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chat-header-info {
+  /* Contenedor para el H3 y el estado */
+  display: flex;
+  flex-direction: column;
+  gap: 4px; /* Espacio entre nombre y estado */
+}
+
+.chat-header-info h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.chat-header-status {
+  font-size: 13px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+.chat-header-status .status-online {
+  color: #2ECC71; /* Verde brillante */
+  text-shadow: 0 0 8px rgba(46, 204, 113, 0.7);
+}
+
+.chat-header-status .status-offline {
+  color: var(--text-secondary); /* Gris/tenue */
+  opacity: 0.8;
+}
+
+/*
+================================================================================
+|           SECCIÓN 15: ESTILOS PARA "ESPERANDO RESPUESTA" (EN CHAT)           |
+================================================================================
+*/
+
+.waiting-indicator {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  padding: 20px;
+  margin-top: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  animation: subtle-pulse-glow 2.5s ease-in-out infinite;
+}
+
+/* Reutilizamos los puntos de 'waiting-dots' que ya deberías tener */
+.waiting-dots {
+  flex-shrink: 0;
+  margin-left: 6px;
+  position: relative;
+  top: -4px;
+}
+
+.waiting-dots span {
+  display: inline-block;
+  animation: typing-dot-bounce 1.4s infinite;
+  padding: 0 1px;
+  font-weight: 900;
+  font-size: 1.2em;
+}
+
+.waiting-dots span:nth-child(1) { animation-delay: 0s; }
+.waiting-dots span:nth-child(2) { animation-delay: 0.2s; }
+.waiting-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+/* (Asegúrate de que las animaciones 'subtle-pulse-glow' 
+   y 'typing-dot-bounce' están en tu CSS) */
+@keyframes subtle-pulse-glow {
+  0%, 100% {
+    opacity: 0.8;
+    text-shadow: 0 0 8px var(--glow-accent-crimson-faint, rgba(201, 164, 255, 0.3));
+  }
+  50% {
+    opacity: 1;
+    text-shadow: 0 0 16px var(--glow-accent-crimson, rgba(201, 164, 255, 0.7));
+  }
+}
+
+@keyframes typing-dot-bounce {
+  0%, 80%, 100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  40% {
+    transform: translateY(-6px);
+    opacity: 1;
+  }
+}
+
+/* src/app/globals.css */
+
+/* ... (pega esto al final de tu archivo) ... */
+
+/*
+================================================================================
+|           SECCIÓN 16: INDICADOR EN LÍNEA (LISTA DE CHATS)                    |
+================================================================================
+*/
+
+.online-indicator-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  background-color: #2ECC71; /* Verde brillante */
+  border-radius: 50%;
+  margin-left: 8px;
+  vertical-align: middle;
+  box-shadow: 0 0 10px rgba(46, 204, 113, 0.8);
+  animation: pulse-online-dot 1.5s infinite;
+}
+
+@keyframes pulse-online-dot {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.7;
+  }
+}
+
+/*
+================================================================================
+|           SECCIÓN 14: ESTILOS PARA HEADER DE CHAT (ESTADO EN LÍNEA)          |
+|           (Asegúrate de que esto ya exista de la vez anterior)             |
+================================================================================
+*/
+
+.chat-header-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px; /* Espacio entre nombre y estado */
+}
+
+.chat-header-info h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.chat-header-status {
+  font-size: 13px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+.chat-header-status .status-online {
+  color: #2ECC71; /* Verde brillante */
+  text-shadow: 0 0 8px rgba(46, 204, 113, 0.7);
+}
+
+.chat-header-status .status-offline {
+  color: var(--text-secondary); /* Gris/tenue */
+  opacity: 0.8;
+}
+
+/* src/app/globals.css */
+
+/* ... (mantén tus estilos existentes) ... */
+
+/*
+================================================================================
+|           SECCIÓN 17: TÍTULO GRANDE "ESPERA A QUE TE RESPONDA"               |
+================================================================================
+*/
+
+.waiting-title-container {
+  margin-bottom: 25px; /* Espacio antes del chat */
+  text-align: center;
+  min-height: 40px; /* Para evitar saltos de layout cuando no está presente */
+}
+
+.waiting-title {
+  font-size: 19px; /* Título grande */
+  font-weight: 800;
+  color: var(--text-primary); /* Color principal del texto */
+  text-shadow: 0 0 15px rgba(255,255,255,0.4); /* Resplandor suave */
+  animation: subtle-pulse-glow 2.5s ease-in-out infinite, fadeInUp 0.8s ease-out; /* Animaciones */
+  display: inline-flex; /* Para alinear el texto con los puntos de espera */
+  align-items: center;
+  gap: 8px; /* Espacio entre el texto y los puntos */
+}
+
+.waiting-title .waiting-dots {
+  position: relative;
+  top: -2px; /* Ajuste vertical de los puntos para que se vean bien con el texto grande */
+  margin-left: 0; /* Ya está incluido en el 'gap' del flexbox */
+}
+
+/* Reutilizamos las animaciones de .waiting-dots y subtle-pulse-glow 
+   que ya deberías tener definidas en este archivo. Si no las tienes, asegúrate de añadirlas: */
+
+@keyframes subtle-pulse-glow {
+  0%, 100% { opacity: 0.8; text-shadow: 0 0 8px rgba(201, 164, 255, 0.3); }
+  50% { opacity: 1; text-shadow: 0 0 16px rgba(201, 164, 255, 0.7); }
+}
+
+@keyframes typing-dot-bounce {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.5; }
+  40% { transform: translateY(-6px); opacity: 1; }
+}
+
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(25px); } to { opacity: 1; transform: translateY(0); } }

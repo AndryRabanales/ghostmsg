@@ -1,224 +1,327 @@
 // src/app/u/[publicId]/page.jsx
 "use client";
 import AnonMessageForm from "@/components/AnonMessageForm";
-import React, { useEffect, useState, useRef } from "react";
-import { useParams } from "next/navigation";
+import FirstMessageGuideModal from "@/components/FirstMessageGuideModal";
+import PublicChatView from "@/components/PublicChatView";
+import React, { useEffect, useState, useRef, useCallback } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { timeAgo } from "@/utils/timeAgo";
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
 
-// --- Componente de la Vista de Chat (integrado) ---
-const PublicChatView = ({ chatInfo, onBack }) => {
-    const { anonToken, chatId, creatorName: initialCreatorName } = chatInfo;
-    const [messages, setMessages] = useState([]);
-    const [newMsg, setNewMsg] = useState("");
-    const [creatorName, setCreatorName] = useState(initialCreatorName || "Respuesta");
-    const [anonAlias, setAnonAlias] = useState("Tú");
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const bottomRef = useRef(null);
-
-    useEffect(() => {
-        bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [messages]);
-
-    useEffect(() => {
-        const fetchMessages = async () => {
-            try {
-                setLoading(true);
-                const res = await fetch(`${API}/chats/${anonToken}/${chatId}`);
-                if (!res.ok) throw new Error("No se pudo cargar el chat");
-                const data = await res.json();
-                
-                setMessages(data.messages || []);
-                if (data.creatorName) setCreatorName(data.creatorName);
-                const firstAnon = data.messages.find(m => m.from === "anon");
-                if (firstAnon?.alias) setAnonAlias(firstAnon.alias);
-
-            } catch (err) {
-                setError("⚠️ Error cargando mensajes");
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchMessages();
-
-        const wsUrl = `${API.replace(/^http/, "ws")}/ws?chatId=${chatId}&anonToken=${anonToken}`;
-        const ws = new WebSocket(wsUrl);
-
-        ws.onmessage = (event) => {
-            try {
-                const msg = JSON.parse(event.data);
-                if (msg.chatId === chatId) {
-                    setMessages((prev) => {
-                        // Previene duplicados si el mensaje ya existe
-                        if (prev.some(m => m.id === msg.id)) return prev;
-                        return [...prev, msg];
-                    });
-                }
-            } catch (e) { console.error("Error procesando WebSocket:", e); }
-        };
-
-        return () => ws.close();
-    }, [chatId, anonToken]);
-
-    const handleSend = async (e) => {
-        e.preventDefault();
-        if (!newMsg.trim()) return;
-
-        const tempMsgContent = newMsg;
-        setNewMsg(""); // Limpia el input inmediatamente
-
-        try {
-            const res = await fetch(`${API}/chats/${anonToken}/${chatId}/messages`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ content: tempMsgContent }),
-            });
-
-            if (!res.ok) {
-              throw new Error("No se pudo enviar el mensaje");
-            }
-            // --- CORRECCIÓN CLAVE ---
-            // Ya no actualizamos el estado aquí. El WebSocket se encargará de ello.
-            // const actualMessage = await res.json();
-            // setMessages((prev) => [...prev, actualMessage]);
-
-        } catch (err) {
-            setError("⚠️ No se pudo enviar el mensaje");
-            setNewMsg(tempMsgContent); // Restaura el texto si falla el envío
-        }
-    };
-
-    const Message = ({ msg, creatorName, anonAlias }) => {
-        const isCreator = msg.from === "creator";
-        const senderName = isCreator ? creatorName : (msg.alias || anonAlias);
-    
-        return (
-            <div className={`message-container ${isCreator ? 'anon' : 'creator'}`}>
-                <span className="message-sender">{senderName}</span>
-                <div className="message-content-bubble">{msg.content}</div>
-            </div>
-        );
-    };
-
-    return (
-        <div className="public-chat-view">
-            <div className="chat-view-header">
-                <h3>Chat con {creatorName}</h3>
-                <button onClick={onBack} className="back-button">← Volver</button>
-            </div>
-            <div className="messages-display">
-                {loading && <p>Cargando mensajes...</p>}
-                {error && <p style={{ color: '#ff7b7b' }}>{error}</p>}
-                {messages.map((m) => (
-                    <Message key={m.id || Math.random()} msg={m} creatorName={creatorName} anonAlias={anonAlias} />
-                ))}
-                <div ref={bottomRef} />
-            </div>
-            <form onSubmit={handleSend} className="chat-reply-form">
-                <input
-                    type="text"
-                    value={newMsg}
-                    onChange={(e) => setNewMsg(e.target.value)}
-                    placeholder="Escribe una respuesta..."
-                    className="form-input-field reply-input"
-                />
-                <button type="submit" disabled={!newMsg.trim()} className="submit-button reply-button">
-                    Enviar
-                </button>
-            </form>
-        </div>
-    );
-};
-
-// --- Componente Principal de la Página (sin cambios) ---
 export default function PublicPage() {
   const params = useParams();
-  const publicId = params.publicId;
+  const publicId = params?.publicId;
+  const router = useRouter();
 
-  const [myChats, setMyChats] = useState([]);
-  const [selectedChat, setSelectedChat] = useState(null);
+  if (publicId === undefined) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', color: 'white', backgroundColor: '#0d0c22' }}>
+        Cargando espacio...
+      </div>
+    );
+  }
 
-  const loadChats = () => {
+  // --- Estados ---
+  const [activeChatInfo, setActiveChatInfo] = useState(null);
+  const [showGuideModal, setShowGuideModal] = useState(false);
+  const [creatorName, setCreatorName] = useState("el creador");
+  const [creatorStatus, setCreatorStatus] = useState(null);
+  const [lastActiveTimestamp, setLastActiveTimestamp] = useState(null);
+  
+  // --- Estados del Chat (ahora en el padre) ---
+  const [chatMessages, setChatMessages] = useState([]); 
+  const [isChatLoading, setIsChatLoading] = useState(true);
+  const [chatError, setChatError] = useState(null); 
+
+  const wsRef = useRef(null);
+
+  // --- Carga el chat guardado en localStorage ---
+  const loadActiveChat = useCallback(() => {
     try {
       const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
-      const relevantChats = stored.filter(chat => chat.creatorPublicId === publicId);
-      relevantChats.sort((a, b) => new Date(b.ts) - new Date(a.ts));
-      setMyChats(relevantChats);
-    } catch (error) {
-      console.error("Error al cargar chats:", error);
-    }
-  };
-
-  useEffect(() => {
-    if (publicId) {
-      loadChats();
+      const foundChat = stored.find(chat => chat.creatorPublicId === publicId);
+      
+      if (foundChat) {
+        if (foundChat.creatorName) {
+          setCreatorName(foundChat.creatorName);
+        }
+        return foundChat;
+      }
+      return null;
+    } catch (error) { 
+      console.error("Error al cargar chat activo:", error); 
+      return null; 
     }
   }, [publicId]);
 
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  // --- Carga el chat al inicio ---
+  useEffect(() => {
+    const chat = loadActiveChat();
+    if (chat) {
+      setActiveChatInfo(chat);
+    }
+  }, [loadActiveChat]);
+  
+  // --- Carga la info del Creador (nombre, etc.) ---
+  useEffect(() => {
+    if (!publicId) return;
+    const fetchCreatorInfo = async () => {
+      try {
+        const res = await fetch(`${API}/public/${publicId}/info`); 
+        if (res.ok) {
+          const data = await res.json();
+          if (data.name) {
+            setCreatorName(prev => (prev === "el creador" ? data.name : prev));
+          }
+          if (data.lastActiveAt) {
+            setLastActiveTimestamp(data.lastActiveAt);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching creator info:", err);
+      }
+    };
+    fetchCreatorInfo();
+  }, [publicId, setCreatorName]);
+
+
+  // --- MODIFICADO: useEffect para EL ÚNICO WEBSOCKET ---
+  useEffect(() => {
+    // Timer para el "hace..." (sin cambios)
+    const interval = setInterval(() => {
+      setLastActiveTimestamp(prev => prev);
+    }, 30000);
+
+    // --- Función para Cargar Mensajes (ahora vive aquí) ---
+    const fetchMessages = async (token, id) => {
+      if (!token || !id) return;
+      setIsChatLoading(true);
+      setChatError(null);
+      try {
+        const res = await fetch(`${API}/chats/${token}/${id}`);
+        if (!res.ok) throw new Error("No se pudo cargar el chat");
+        const data = await res.json();
+        setChatMessages(data.messages || []);
+      } catch (err) { setChatError("⚠️ Error cargando mensajes"); }
+      finally { setIsChatLoading(false); }
+    };
+
+    // --- Conexión WebSocket Única ---
+    const connectWebSocket = () => {
+      if (wsRef.current) { wsRef.current.close(1000, "Reconectando"); }
+
+      // 1. URL base solo con publicId
+      let wsUrl = `${API.replace(/^http/, "ws")}/ws?publicId=${publicId}`;
+      
+      // 2. Si el chat está activo, carga sus mensajes y añade el anonToken al WS
+      if (activeChatInfo) {
+        wsUrl += `&anonTokens=${activeChatInfo.anonToken}`;
+        fetchMessages(activeChatInfo.anonToken, activeChatInfo.chatId);
+      } else {
+        // Si no hay chat, resetea el estado del chat
+        setIsChatLoading(false);
+        setChatMessages([]);
+        setChatError(null);
+      }
+
+      const ws = new WebSocket(wsUrl);
+      wsRef.current = ws;
+
+      ws.onopen = () => console.log(`WS (Public Page MAIN) conectado: ${wsUrl}`);
+      ws.onerror = (error) => console.error("WS (Public Page MAIN) error:", error);
+      ws.onclose = (event) => {
+        console.log(`WS (Public Page MAIN) disconnected. Code: ${event.code}.`);
+        if (![1000, 1008].includes(event.code)) {
+          console.log("Reconectando WS (MAIN)..."); 
+          setTimeout(connectWebSocket, 5000);
+        }
+      };
+
+      // --- Manejador de Mensajes Unificado ---
+      ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          
+          // Handler 1: Estado del Creador
+          if (msg.type === 'CREATOR_STATUS_UPDATE') {
+            setCreatorStatus(msg.status);
+            if (msg.status === 'offline') {
+              setLastActiveTimestamp(new Date().toISOString());
+            }
+          }
+
+          // Handler 2: Mensajes del Chat
+          // (Solo se activa si el chat está activo y el msg es para este chat)
+          if (activeChatInfo && msg.chatId === activeChatInfo.chatId) {
+            setChatMessages((prev) => {
+              // Evita duplicados
+              if (prev.some(m => m.id === msg.id)) return prev;
+              return [...prev, msg];
+            });
+          }
+        } catch (e) { console.error("Error processing WS (MAIN):", e); }
+      };
+    };
+
+    connectWebSocket();
+    
+    // Limpieza
+    return () => { 
+      clearInterval(interval);
+      if (wsRef.current) { 
+        wsRef.current.onclose = null; 
+        wsRef.current.close(1000, "Componente Page desmontado"); 
+        wsRef.current = null; 
+      } 
+    };
+    // El WS se reconectará si activeChatInfo cambia (cuando el usuario envía el 1er msg)
+  },[publicId, activeChatInfo]); 
+
+  
+  // --- Función para cerrar el modal (sin cambios) ---
+  const handleCloseGuide = useCallback(() => { setShowGuideModal(false); }, []);
+
+  // --- Función para cuando se crea el chat (sin cambios) ---
+  const handleChatCreated = useCallback((newChatInfo) => {
+    setActiveChatInfo(newChatInfo);
+    setShowGuideModal(true);
+    if (newChatInfo.creatorName) {
+      setCreatorName(newChatInfo.creatorName);
+    }
+  }, []);
+
+  // --- NUEVO: Función para Enviar Mensajes ---
+  // Se pasará a PublicChatView para que la use
+  const handleSendMessage = async (content) => {
+    if (!activeChatInfo || !content.trim()) return;
+    const { anonToken, chatId } = activeChatInfo;
+    
+    try {
+      const res = await fetch(`${API}/chats/${anonToken}/${chatId}/messages`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+      });
+      
+      if (!res.ok) {
+        const d = await res.json();
+        throw new Error(d.error || "Error enviando el mensaje");
+      }
+      // No necesitamos hacer nada más. El mensaje de vuelta
+      // llegará por el WebSocket que *este* componente (page.jsx) ya está escuchando.
+      
+    } catch (err) {
+      console.error("Error enviando mensaje:", err);
+      // Aquí podrías guardar el error en un estado y pasarlo al chat
+      setChatError("⚠️ Error al enviar. Inténtalo de nuevo.");
+    }
   };
 
+  // --- Estilos (sin cambios) ---
   const pageStyles = `
     .page-container {
       background: linear-gradient(-45deg, #0d0c22, #1a1a2e, #2c1a5c, #3c287c);
-      background-size: 400% 400%;
-      animation: gradient-pan 15s ease infinite;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 40px 20px;
-      font-family: var(--font-main);
+      background-size: 400% 400%; animation: gradient-pan 15s ease infinite;
+      min-height: 100vh; display: flex; flex-direction: column; justify-content: center;
+      align-items: center; padding: 40px 20px; font-family: var(--font-main);
+      position: relative; color: var(--text-primary);
     }
-    @keyframes gradient-pan {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
+    @keyframes gradient-pan { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+    .to-dashboard-button { position: absolute; top: 20px; right: 20px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: #fff; padding: 10px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background-color 0.3s ease, transform 0.3s ease; z-index: 10; }
+    .to-dashboard-button:hover { background: rgba(255, 255, 255, 0.2); transform: scale(1.1); }
+    .create-space-link-container { text-align: center; margin-top: 35px; margin-bottom: 30px; opacity: 0; }
+    .create-space-link { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; background-color: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 12px; color: var(--glow-accent-crimson); font-size: 15px; font-weight: 600; text-decoration: none; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); }
+    .create-space-link:hover { background-color: rgba(142, 45, 226, 0.2); border-color: var(--glow-accent-crimson); color: #fff; transform: translateY(-2px); box-shadow: 0 8px 25px rgba(142, 45, 226, 0.3); }
+    .create-space-link svg { transition: transform 0.3s ease; }
+    .create-space-link:hover svg { transform: scale(1.1); }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(25px); } to { opacity: 1; transform: translateY(0); } }
+    .staggered-fade-in-up { opacity: 0; animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+    
+    .waiting-title-container {
+      margin-bottom: 25px;
+      text-align: center;
+      min-height: 40px; 
+    }
+    .waiting-title {
+      font-size: 22px; /* Tamaño que ajustaste */
+      font-weight: 800;
+      color: var(--text-primary);
+      text-shadow: 0 0 15px rgba(255,255,255,0.4);
+      animation: subtle-pulse-glow 2.5s ease-in-out infinite, fadeInUp 0.8s ease-out;
+      display: inline-flex; 
+      align-items: center;
+      gap: 8px;
+    }
+    .waiting-title .waiting-dots {
+      position: relative;
+      top: -2px;
+      margin-left: 0;
     }
   `;
+  
+  const lastActiveDisplay = timeAgo(lastActiveTimestamp);
+
+  // Lógica para el título "Espera..." (ahora usa los estados del padre)
+  const lastMessage = chatMessages[chatMessages.length - 1];
+  const isWaitingForReplyTitle = activeChatInfo && !isChatLoading && chatMessages.length > 0 && (!lastMessage || lastMessage.from === 'anon');
 
   return (
     <>
       <style>{pageStyles}</style>
+      {showGuideModal && <FirstMessageGuideModal onClose={handleCloseGuide} />}
+
       <div className="page-container">
+        <button onClick={() => router.push('/')} className="to-dashboard-button" title="Ir a mi espacio">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="24" height="24"><path strokeLinecap="round" strokeLinejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+        </button>
+
         <div style={{ maxWidth: 520, width: '100%' }}>
-          {selectedChat ? (
-            <PublicChatView chatInfo={selectedChat} onBack={() => setSelectedChat(null)} />
-          ) : (
+
+          {activeChatInfo ? (
             <>
-              <h1 style={{
-                textAlign: 'center', marginBottom: '10px', fontSize: '26px',
-                color: '#fff', fontWeight: 800, textShadow: '0 0 20px rgba(255, 255, 255, 0.3)',
-                animation: 'fadeInUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards'
-              }}>
-                Envíame un Mensaje Anónimo y Abre un Chat Anónimo
+              {/* Título "Espera..." (sin cambios) */}
+              <div className="waiting-title-container">
+                {isWaitingForReplyTitle && (
+                  <h1 className="waiting-title">
+                    Espera a que {creatorName} te responda
+                    <span className="waiting-dots"><span>.</span><span>.</span><span>.</span></span>
+                  </h1>
+                )}
+              </div>
+              
+              {/* --- MODIFICADO: Pasa las nuevas props a PublicChatView --- */}
+              <PublicChatView
+                chatId={activeChatInfo.chatId}
+                anonToken={activeChatInfo.anonToken}
+                creatorStatus={creatorStatus}
+                lastActiveDisplay={lastActiveDisplay}
+                creatorName={creatorName || "el creador"}
+                
+                // Pasa el estado del chat
+                messages={chatMessages}
+                isLoading={isChatLoading}
+                error={chatError}
+                
+                // Pasa el manejador de envío
+                onSendMessage={handleSendMessage}
+              />
+            </>
+          ) : (
+            // Formulario de primer mensaje (sin cambios)
+            <>
+              <h1 style={{ textAlign: 'center', marginBottom: '30px', fontSize: '26px', color: '#fff', fontWeight: 800, textShadow: '0 0 20px rgba(255, 255, 255, 0.3)', animation: 'fadeInUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards' }}>
+                Envíale un Mensaje Anónimo a {creatorName}
               </h1>
-              <AnonMessageForm publicId={publicId} onSent={loadChats} />
-              {myChats.length > 0 && (
-                <div className="chats-list-section">
-                  <h2 className="chats-list-title">Tus Chats Abiertos</h2>
-                  <div className="chats-list-grid">
-                    {myChats.map((chat) => (
-                      <div
-                        key={chat.chatId}
-                        className="chat-list-item"
-                        onClick={() => setSelectedChat(chat)}
-                      >
-                        <div className="chat-list-item-main">
-                          <div className="chat-list-item-alias">{chat.anonAlias || "Anónimo"}</div>
-                          <div className="chat-list-item-content">"{chat.preview}"</div>
-                          <div className="chat-list-item-date">{formatDate(chat.ts)}</div>
-                        </div>
-                        <button className="chat-list-item-button">Abrir</button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <AnonMessageForm
+                publicId={publicId}
+                onChatCreated={handleChatCreated}
+              />
+              <div className="create-space-link-container staggered-fade-in-up" style={{ animationDelay: '0.8s' }}>
+                <a href="/" className="create-space-link">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="20" height="20"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  Crear tu propio espacio
+                </a>
+              </div>
             </>
           )}
         </div>
