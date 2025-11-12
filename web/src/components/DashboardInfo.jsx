@@ -1,9 +1,12 @@
 // src/components/DashboardInfo.jsx
 "use client";
 import { useState, useEffect } from "react";
-import LivesStatus from "./LivesStatus";
+
+// --- AÑADIDO: Importar el nuevo componente ---
+import BalanceSummary from "./BalanceSummary"; 
 import PremiumButton from "./PremiumButton";
 
+// ... (const CopyIcon, const LinkInput, const ArrowIcon ... sin cambios) ...
 const CopyIcon = () => (
     <svg height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor"><path d="M8 17.929H6c-1.105 0-2-.895-2-2V4c0-1.105.895-2 2-2h11c1.105 0 2 .895 2 2v2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path><path d="M8 7.01V4c0-1.105.895-2 2-2h7c1.105 0 2 .895 2 2v12c0 1.105-.895 2-2 2h-2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path></svg>
 );
@@ -32,7 +35,6 @@ const LinkInput = ({ label, icon, url, type, onCopy, copyStatus }) => {
     );
 };
 
-// --- Icono de Flecha para el botón de colapso ---
 const ArrowIcon = () => (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M17 10L12 15L7 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -43,7 +45,7 @@ const ArrowIcon = () => (
 export default function DashboardInfo({ creator, onChange }) {
   const [publicUrl, setPublicUrl] = useState('');
   const [copyStatus, setCopyStatus] = useState({});
-  const [isCollapsed, setIsCollapsed] = useState(false); // Estado para controlar el colapso
+  const [isCollapsed, setIsCollapsed] = useState(false); 
 
   useEffect(() => {
     if (creator && typeof window !== 'undefined') {
@@ -62,30 +64,32 @@ export default function DashboardInfo({ creator, onChange }) {
   if (!creator) return null;
 
   return (
-    // Contenedor principal del sidebar que cambiará de clase
     <div className={`sidebar-container ${isCollapsed ? 'collapsed' : ''}`}>
-      {/* Contenido que se va a ocultar/mostrar */}
+      
       <div className="sidebar-content">
-        <div className="dashboard-main-content">
-          <div className="links-section">
-            <LinkInput 
-              icon="✨"
-              label="Link Público (compártelo en tus redes sociales)"
-              url={publicUrl}
-              type="public"
-              onCopy={handleCopy}
-              copyStatus={copyStatus}
-            />
-          </div>
+        
+        {/* 1. LinkInput */}
+        <div className="links-section">
+          <LinkInput 
+            icon="✨"
+            label="Link Público (compártelo en tus redes sociales)"
+            url={publicUrl}
+            type="public"
+            onCopy={handleCopy}
+            copyStatus={copyStatus}
+          />
         </div>
         
-        <div className="dashboard-side-content">
-          <LivesStatus creator={creator} />
-          <PremiumButton creator={creator} onChange={onChange} />
-        </div>
+        {/* --- AÑADIDO: El componente de Balance --- */}
+        {/* Lo colocamos antes del botón Premium */}
+        <BalanceSummary creator={creator} />
+
+        {/* 2. PremiumButton */}
+        <PremiumButton creator={creator} onChange={onChange} />
+
       </div>
       
-      {/* Contenedor del botón para mostrar/ocultar */}
+      {/* Botón de colapso */}
       <div className="sidebar-toggle-container">
         <button onClick={() => setIsCollapsed(!isCollapsed)} className="sidebar-toggle-button" title={isCollapsed ? "Mostrar" : "Ocultar"}>
           <ArrowIcon />

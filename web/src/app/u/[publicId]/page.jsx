@@ -1,11 +1,12 @@
 // src/app/u/[publicId]/page.jsx
 "use client";
-import AnonMessageForm from "@/components/AnonMessageForm";
-import FirstMessageGuideModal from "@/components/FirstMessageGuideModal";
-import PublicChatView from "@/components/PublicChatView";
+// Corrección de rutas de importación
+import AnonMessageForm from "../../../components/AnonMessageForm";
+import FirstMessageGuideModal from "../../../components/FirstMessageGuideModal";
+import PublicChatView from "../../../components/PublicChatView";
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { timeAgo } from "@/utils/timeAgo";
+import { timeAgo } from "../../../utils/timeAgo";
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
 
@@ -25,11 +26,16 @@ export default function PublicPage() {
   // --- Estados ---
   const [activeChatInfo, setActiveChatInfo] = useState(null);
   const [showGuideModal, setShowGuideModal] = useState(false);
+  
+  // --- Estados del Creador (ahora se cargan al inicio) ---
   const [creatorName, setCreatorName] = useState("el creador");
+  const [creatorContract, setCreatorContract] = useState(null); // <-- El contrato
+  const [escasezData, setEscasezData] = useState(null);
+  const [isFull, setIsFull] = useState(false);
   const [creatorStatus, setCreatorStatus] = useState(null);
   const [lastActiveTimestamp, setLastActiveTimestamp] = useState(null);
   
-  // --- Estados del Chat (ahora en el padre) ---
+  // --- Estados del Chat ---
   const [chatMessages, setChatMessages] = useState([]); 
   const [isChatLoading, setIsChatLoading] = useState(true);
   const [chatError, setChatError] = useState(null); 
@@ -45,6 +51,10 @@ export default function PublicPage() {
       if (foundChat) {
         if (foundChat.creatorName) {
           setCreatorName(foundChat.creatorName);
+        }
+        // Cargar el contrato desde localStorage si ya existe
+        if (foundChat.creatorPremiumContract) {
+          setCreatorContract(foundChat.creatorPremiumContract);
         }
         return foundChat;
       }
@@ -63,37 +73,46 @@ export default function PublicPage() {
     }
   }, [loadActiveChat]);
   
-  // --- Carga la info del Creador (nombre, etc.) ---
+  
+  // --- 👇 RE-AÑADIDO: useEffect para Cargar Info Pública del Creador ---
+  // (Ahora que la ruta API existe, esto funcionará)
   useEffect(() => {
-    if (!publicId) return;
-    const fetchCreatorInfo = async () => {
+    // Solo se ejecuta si NO hay un chat activo (es un nuevo visitante)
+    if (!publicId || activeChatInfo) return; 
+
+    const fetchPublicCreatorInfo = async () => {
       try {
-        const res = await fetch(`${API}/public/${publicId}/info`); 
-        if (res.ok) {
-          const data = await res.json();
-          if (data.name) {
-            setCreatorName(prev => (prev === "el creador" ? data.name : prev));
-          }
-          if (data.lastActiveAt) {
-            setLastActiveTimestamp(data.lastActiveAt);
-          }
-        }
+        // Esta es la ruta que acabamos de añadir en routes/public.js
+        const res = await fetch(`${API}/public/creator/${publicId}`); 
+        if (!res.ok) throw new Error("No se pudo cargar la info del creador");
+        
+        const data = await res.json();
+        
+        // Seteamos los datos que necesitamos para el AnonMessageForm
+        if (data.creatorName) setCreatorName(data.creatorName);
+        if (data.premiumContract) setCreatorContract(data.premiumContract); // <-- ¡FUNCIONARÁ!
+        if (data.escasezData) setEscasezData(data.escasezData);
+        if (data.isFull) setIsFull(data.isFull);
+
       } catch (err) {
-        console.error("Error fetching creator info:", err);
+        console.error("Error cargando info pública del creador:", err);
       }
     };
-    fetchCreatorInfo();
-  }, [publicId, setCreatorName]);
+
+    fetchPublicCreatorInfo();
+  }, [publicId, activeChatInfo]); // Depende de publicId y activeChatInfo
+  // --- 👆 FIN DEL BLOQUE RE-AÑADIDO ---
 
 
-  // --- MODIFICADO: useEffect para EL ÚNICO WEBSOCKET ---
+  // Cargar mensajes iniciales y conectar WebSocket (MODIFICADO)
   useEffect(() => {
-    // Timer para el "hace..." (sin cambios)
+    
+    // 1. Timer para el "hace..." (sin cambios)
     const interval = setInterval(() => {
       setLastActiveTimestamp(prev => prev);
-    }, 30000);
-
-    // --- Función para Cargar Mensajes (ahora vive aquí) ---
+    }, 30000); // Actualiza cada 30 segundos
+    
+    // --- Función para Cargar Mensajes ---
     const fetchMessages = async (token, id) => {
       if (!token || !id) return;
       setIsChatLoading(true);
@@ -103,23 +122,29 @@ export default function PublicPage() {
         if (!res.ok) throw new Error("No se pudo cargar el chat");
         const data = await res.json();
         setChatMessages(data.messages || []);
+        
+        // Cargar contrato si no se cargó al inicio (porque el chat ya existía)
+        if (data.creatorPremiumContract && !creatorContract) {
+            setCreatorContract(data.creatorPremiumContract);
+        }
+
       } catch (err) { setChatError("⚠️ Error cargando mensajes"); }
       finally { setIsChatLoading(false); }
     };
+    // -----------------------------------------------------------
 
-    // --- Conexión WebSocket Única ---
+    // 2. Conexión WebSocket Única
     const connectWebSocket = () => {
-      if (wsRef.current) { wsRef.current.close(1000, "Reconectando"); }
+      if (wsRef.current) { 
+        wsRef.current.close(1000, "Reconectando"); 
+      }
 
-      // 1. URL base solo con publicId
       let wsUrl = `${API.replace(/^http/, "ws")}/ws?publicId=${publicId}`;
       
-      // 2. Si el chat está activo, carga sus mensajes y añade el anonToken al WS
       if (activeChatInfo) {
         wsUrl += `&anonTokens=${activeChatInfo.anonToken}`;
         fetchMessages(activeChatInfo.anonToken, activeChatInfo.chatId);
       } else {
-        // Si no hay chat, resetea el estado del chat
         setIsChatLoading(false);
         setChatMessages([]);
         setChatError(null);
@@ -150,15 +175,23 @@ export default function PublicPage() {
               setLastActiveTimestamp(new Date().toISOString());
             }
           }
+          
+          // --- HANDLER S3: Actualización de Contrato en Tiempo Real ---
+          if (msg.type === 'CREATOR_INFO_UPDATE' && msg.premiumContract) {
+             setCreatorContract(msg.premiumContract); 
+             console.log("WS: Contrato Premium actualizado.");
+          }
+          // -----------------------------------------------------------
 
-          // Handler 2: Mensajes del Chat
-          // (Solo se activa si el chat está activo y el msg es para este chat)
+          // Handler 2: Mensajes del Chat (Actualización de la conversación)
           if (activeChatInfo && msg.chatId === activeChatInfo.chatId) {
             setChatMessages((prev) => {
-              // Evita duplicados
               if (prev.some(m => m.id === msg.id)) return prev;
               return [...prev, msg];
             });
+            if (msg.from === 'creator') {
+                 fetchMessages(activeChatInfo.anonToken, activeChatInfo.chatId);
+            }
           }
         } catch (e) { console.error("Error processing WS (MAIN):", e); }
       };
@@ -175,24 +208,26 @@ export default function PublicPage() {
         wsRef.current = null; 
       } 
     };
-    // El WS se reconectará si activeChatInfo cambia (cuando el usuario envía el 1er msg)
-  },[publicId, activeChatInfo]); 
+  },[publicId, activeChatInfo, creatorContract]); // <-- creatorContract añadido a dependencias
 
   
   // --- Función para cerrar el modal (sin cambios) ---
   const handleCloseGuide = useCallback(() => { setShowGuideModal(false); }, []);
 
-  // --- Función para cuando se crea el chat (sin cambios) ---
+  // --- Función para cuando se crea el chat (MODIFICADA) ---
   const handleChatCreated = useCallback((newChatInfo) => {
     setActiveChatInfo(newChatInfo);
     setShowGuideModal(true);
     if (newChatInfo.creatorName) {
       setCreatorName(newChatInfo.creatorName);
     }
+    // Cargar el contrato que la API devolvió al crear el chat
+    if (newChatInfo.creatorPremiumContract) {
+      setCreatorContract(newChatInfo.creatorPremiumContract);
+    }
   }, []);
 
-  // --- NUEVO: Función para Enviar Mensajes ---
-  // Se pasará a PublicChatView para que la use
+  // --- Función para Enviar Mensajes ---
   const handleSendMessage = async (content) => {
     if (!activeChatInfo || !content.trim()) return;
     const { anonToken, chatId } = activeChatInfo;
@@ -207,12 +242,9 @@ export default function PublicPage() {
         const d = await res.json();
         throw new Error(d.error || "Error enviando el mensaje");
       }
-      // No necesitamos hacer nada más. El mensaje de vuelta
-      // llegará por el WebSocket que *este* componente (page.jsx) ya está escuchando.
       
     } catch (err) {
       console.error("Error enviando mensaje:", err);
-      // Aquí podrías guardar el error en un estado y pasarlo al chat
       setChatError("⚠️ Error al enviar. Inténtalo de nuevo.");
     }
   };
@@ -279,7 +311,7 @@ export default function PublicPage() {
 
           {activeChatInfo ? (
             <>
-              {/* Título "Espera..." (sin cambios) */}
+              {/* Título "Espera..." */}
               <div className="waiting-title-container">
                 {isWaitingForReplyTitle && (
                   <h1 className="waiting-title">
@@ -289,32 +321,32 @@ export default function PublicPage() {
                 )}
               </div>
               
-              {/* --- MODIFICADO: Pasa las nuevas props a PublicChatView --- */}
               <PublicChatView
                 chatId={activeChatInfo.chatId}
                 anonToken={activeChatInfo.anonToken}
                 creatorStatus={creatorStatus}
                 lastActiveDisplay={lastActiveDisplay}
                 creatorName={creatorName || "el creador"}
-                
-                // Pasa el estado del chat
                 messages={chatMessages}
                 isLoading={isChatLoading}
                 error={chatError}
-                
-                // Pasa el manejador de envío
                 onSendMessage={handleSendMessage}
               />
             </>
           ) : (
-            // Formulario de primer mensaje (sin cambios)
+            // Formulario de primer mensaje
             <>
               <h1 style={{ textAlign: 'center', marginBottom: '30px', fontSize: '26px', color: '#fff', fontWeight: 800, textShadow: '0 0 20px rgba(255, 255, 255, 0.3)', animation: 'fadeInUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards' }}>
                 Envíale un Mensaje Anónimo a {creatorName}
               </h1>
+              
+              {/* Se pasan los estados (ahora sí se cargan al inicio) */}
               <AnonMessageForm
                 publicId={publicId}
                 onChatCreated={handleChatCreated}
+                escasezData={escasezData} 
+                isFull={isFull} 
+                creatorContract={creatorContract} 
               />
               <div className="create-space-link-container staggered-fade-in-up" style={{ animationDelay: '0.8s' }}>
                 <a href="/" className="create-space-link">
