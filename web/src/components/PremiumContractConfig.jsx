@@ -4,81 +4,214 @@ import React, { useState } from 'react';
 import { getAuthHeaders, refreshToken } from "@/utils/auth";
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
-const MAX_LENGTH = 120; // Límite de caracteres para el contrato
+const MAX_LENGTH_CONTRACT = 120;
+const MAX_LENGTH_TOPIC = 100;
 
 export default function PremiumContractConfig({ creator, onChange }) {
   const [contract, setContract] = useState(creator.premiumContract || "Respuesta de alta calidad.");
-  const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState(null);
+  const [topic, setTopic] = useState(creator.topicPreference || "Cualquier mensaje respetuoso y constructivo.");
+  const [loadingContract, setLoadingContract] = useState(false);
+  const [loadingTopic, setLoadingTopic] = useState(false);
+  const [statusContract, setStatusContract] = useState(null);
+  const [statusTopic, setStatusTopic] = useState(null);
 
-  const handleSave = async () => {
-    setLoading(true);
-    setStatus(null);
+  const handleSave = async (field) => {
+    let loadingSetter, statusSetter, value, endpoint, successMessage, creatorKey;
+
+    if (field === 'contract') {
+        loadingSetter = setLoadingContract;
+        statusSetter = setStatusContract;
+        value = contract;
+        endpoint = `${API}/creators/${creator.id}/update-contract`;
+        successMessage = 'Contrato de Servicio actualizado.';
+        creatorKey = 'premiumContract';
+    } else if (field === 'topic') {
+        loadingSetter = setLoadingTopic;
+        statusSetter = setStatusTopic;
+        value = topic;
+        endpoint = `${API}/creators/${creator.id}/update-topic`;
+        successMessage = 'Filtro de Temas actualizado.';
+        creatorKey = 'topicPreference';
+    }
+
+    if (!loadingSetter) return;
+
+    loadingSetter(true);
+    statusSetter(null);
 
     try {
-      let res = await fetch(`${API}/creators/${creator.id}/update-contract`, {
+      let res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-        body: JSON.stringify({ premiumContract: contract }),
+        body: JSON.stringify({ [creatorKey]: value }),
       });
 
-      // Lógica de refresh si el token expiró
       if (res.status === 401) {
         const newToken = await refreshToken(localStorage.getItem("publicId"));
         if (newToken) {
-          res = await fetch(`${API}/creators/${creator.id}/update-contract`, {
+          res = await fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', ...getAuthHeaders(newToken) },
-            body: JSON.stringify({ premiumContract: contract }),
+            body: JSON.stringify({ [creatorKey]: value }),
           });
         }
       }
 
-      if (!res.ok) throw new Error("Error al guardar el contrato.");
+      if (!res.ok) throw new Error("Error al guardar la configuración.");
 
-      setStatus({ type: 'success', message: 'Contrato actualizado.' });
-      
-      // Actualizar el estado del creador en el componente padre
-      if (onChange) {
-        onChange({ ...creator, premiumContract: contract });
-      }
+      statusSetter({ type: 'success', message: successMessage });
+
+      if (onChange) onChange({ ...creator, [creatorKey]: value });
 
     } catch (err) {
-      setStatus({ type: 'error', message: err.message || "Error de red." });
+      statusSetter({ type: 'error', message: err.message || "Error de red." });
     } finally {
-      setLoading(false);
-      setTimeout(() => setStatus(null), 3000);
+      loadingSetter(false);
+      setTimeout(() => statusSetter(null), 3000);
     }
   };
 
   return (
     <div className="premium-contract-config-container">
-      <h3>📜 Contrato de Servicio Premium (S3)</h3>
-      <p className="contract-guide-text">Define lo que garantizas en tu respuesta Premium (máximo {MAX_LENGTH} caracteres).</p>
       
+      {/* SECCIÓN CONTRATO */}
+      <h3 style={{fontSize: '1.2em', fontWeight: '700', margin: '0 0 10px', color: 'var(--text-primary)'}}>
+        📜 Contrato de Servicio (S3)
+      </h3>
+      <p className="contract-guide-text">
+        Define lo que <b>garantizas</b> en tu respuesta de texto.
+      </p>
+
       <div className="contract-input-wrapper">
         <input
           type="text"
           value={contract}
-          onChange={(e) => setContract(e.target.value.slice(0, MAX_LENGTH))}
-          disabled={loading}
-          placeholder="Ej: Recibirás 1 foto exclusiva y 50 caracteres de texto."
+          onChange={(e) => setContract(e.target.value.slice(0, MAX_LENGTH_CONTRACT))}
+          disabled={loadingContract}
+          placeholder="Ej: Una respuesta detallada de al menos 100 caracteres."
           className="form-input-field contract-input"
         />
-        <div className="char-count" style={{ color: contract.length > MAX_LENGTH - 20 ? '#ff7b7b' : 'var(--text-secondary)' }}>
-          {contract.length} / {MAX_LENGTH}
+        <div className="char-count" style={{
+          color: contract.length > MAX_LENGTH_CONTRACT - 20 ? '#ff7b7b' : 'var(--text-secondary)'
+        }}>
+          {contract.length} / {MAX_LENGTH_CONTRACT}
         </div>
       </div>
 
-      <button onClick={handleSave} disabled={loading || contract.trim().length < 5} className="save-contract-button">
-        {loading ? 'Guardando...' : 'Guardar Contrato'}
+      {/* ✅ BOTÓN GUARDAR CONTRATO CON DISEÑO */}
+      <button 
+        onClick={() => handleSave('contract')} 
+        disabled={loadingContract || contract.trim().length < 5} 
+        className="save-contract-button"
+        style={{
+          marginTop: '10px',
+          minWidth: '150px',
+          padding: '10px 20px',
+          border: 'none',
+          backgroundColor: loadingContract || contract.trim().length < 5 ? '#8a6bb3' : '#503382',
+          color: '#fff',
+          borderRadius: '8px',
+          fontWeight: '600',
+          fontSize: '14px',
+          cursor: loadingContract || contract.trim().length < 5 ? 'not-allowed' : 'pointer',
+          transition: 'all 0.2s ease',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+        }}
+        onMouseEnter={(e) => {
+          if (!loadingContract && contract.trim().length >= 5) {
+            e.target.style.backgroundColor = '#3f2868';
+            e.target.style.transform = 'translateY(-1px)';
+            e.target.style.boxShadow = '0 4px 8px rgba(80, 51, 130, 0.4)';
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!loadingContract && contract.trim().length >= 5) {
+            e.target.style.backgroundColor = '#503382';
+          }
+          e.target.style.transform = 'translateY(0)';
+          e.target.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+        }}
+      >
+        {loadingContract ? 'Guardando...' : 'Guardar Contrato'}
       </button>
 
-      {status && (
-        <p className={`contract-status ${status.type}`}>
-          {status.message}
+      {statusContract && (
+        <p className={`contract-status ${statusContract.type === 'error' ? 'auth-error' : 'form-status-message success'}`} 
+           style={{textAlign: 'center', marginTop: '15px'}}>
+          {statusContract.message}
         </p>
       )}
+
+      {/* SECCIÓN TEMA */}
+      <div style={{borderTop: '1px solid var(--border-color-faint)', paddingTop: '20px', marginTop: '30px'}}>
+        <h3 style={{fontSize: '1.2em', fontWeight: '700', margin: '0 0 10px', color: 'var(--text-primary)'}}>
+            🤖 Filtro de Relevancia (E4)
+        </h3>
+
+        <p className="contract-guide-text" style={{fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: '0 0 15px'}}>
+            Describe el tipo de mensajes que más te interesan.
+        </p>
+
+        <div className="contract-input-wrapper">
+          <input
+            type="text"
+            value={topic}
+            onChange={(e) => setTopic(e.target.value.slice(0, MAX_LENGTH_TOPIC))}
+            disabled={loadingTopic}
+            placeholder="Ej: Quiero recibir mensajes de apoyo o consejos de negocios."
+            className="form-input-field contract-input"
+          />
+          <div className="char-count" style={{
+            color: topic.length > MAX_LENGTH_TOPIC - 10 ? '#ff7b7b' : 'var(--text-secondary)'
+          }}>
+            {topic.length} / {MAX_LENGTH_TOPIC}
+          </div>
+        </div>
+
+        {/* ✅ BOTÓN GUARDAR TEMA CON DISEÑO */}
+        <button 
+          onClick={() => handleSave('topic')} 
+          disabled={loadingTopic || topic.trim().length < 5} 
+          className="save-contract-button"
+          style={{
+            marginTop: '10px',
+            minWidth: '150px',
+            padding: '10px 20px',
+            border: 'none',
+            backgroundColor: loadingTopic || topic.trim().length < 5 ? '#b8a3c9' : '#8b7ba8',
+            color: '#fff',
+            borderRadius: '8px',
+            fontWeight: '600',
+            fontSize: '14px',
+            cursor: loadingTopic || topic.trim().length < 5 ? 'not-allowed' : 'pointer',
+            transition: 'all 0.2s ease',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+          }}
+          onMouseEnter={(e) => {
+            if (!loadingTopic && topic.trim().length >= 5) {
+              e.target.style.backgroundColor = '#75668f';
+              e.target.style.transform = 'translateY(-1px)';
+              e.target.style.boxShadow = '0 4px 8px rgba(139, 123, 168, 0.4)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!loadingTopic && topic.trim().length >= 5) {
+              e.target.style.backgroundColor = '#8b7ba8';
+            }
+            e.target.style.transform = 'translateY(0)';
+            e.target.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+          }}
+        >
+          {loadingTopic ? 'Guardando...' : 'Guardar Tema'}
+        </button>
+
+        {statusTopic && (
+          <p className={`contract-status ${statusTopic.type === 'error' ? 'auth-error' : 'form-status-message success'}`} 
+             style={{textAlign: 'center', marginTop: '15px'}}>
+            {statusTopic.message}
+          </p>
+        )}
+      </div>
     </div>
   );
 }

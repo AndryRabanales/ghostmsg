@@ -1,230 +1,170 @@
+// Contenido para: andryrabanales/ghost-web/ghost-web-4463a987f3e90131385d89dd5aff2cb04da1e0d4/src/components/AnonMessageForm.jsx
 "use client";
 import { useState, useEffect } from "react";
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
-const MIN_PREMIUM_AMOUNT = 100; // Mínimo para el premium (P1)
+const FALLBACK_MIN_PREMIUM_AMOUNT = 200; 
 
-// --- CORRECCIÓN: FUNCIÓN MOVIDA AL NIVEL RAÍZ (S3) ---
-/**
- * Muestra el contrato guardado por el creador.
- * @param {string | null | object} contractData El string o JSON del contrato guardado.
- * @returns {string} Resumen del contrato.
- */
+// --- FUNCIÓN DE FORMATEO DE CONTRATO (S3) ---
+// --- TAREA 3: Modificada para eliminar promesas de "fotos" ---
 const formatContract = (contractData) => {
-    // Verificamos si es un string simple y no está vacío
     if (typeof contractData === 'string' && contractData.trim().length > 0) {
-        // Si el creador escribió "Mi contrato", mostramos "Mi contrato"
         return contractData.trim();
     }
-
-    // --- Mantenemos la lógica antigua por si acaso (aunque parece no usarse) ---
-    try {
-        // Aseguramos que es un objeto
-        const data = typeof contractData === 'string' ? JSON.parse(contractData) : contractData;
-        
-        // Manejo de valores no definidos si el contrato es nuevo o JSON vacío
-        if (!data || Object.keys(data).length === 0) {
-             return "Respuesta de alta calidad garantizada.";
-        }
-        
-        let parts = [];
-        if (data.include_photo) parts.push("1 Foto Exclusiva");
-        if (data.text_min_chars > 0) parts.push(`Mínimo ${data.text_min_chars} caracteres de texto`);
-        if (data.include_pdf) parts.push("1 Archivo PDF");
-        
-        return parts.length > 0 ? parts.join(', ') : "Respuesta de alta calidad garantizada.";
-    } catch (e) {
-        // Si todo falla (incluso el parseo del string), mostramos el texto por defecto.
-        return "Respuesta de alta calidad garantizada.";
-    }
+    return "Respuesta de texto garantizada (mín. 40 caracteres).";
 }
 // --- FIN: Función de Formato (S3) ---
 
 
-// --- COMPONENTE TipSelector (Control de propinas P1) ---
-/**
- * Un componente simple para seleccionar montos de propina (simulados)
- */
-const TipSelector = ({ selectedAmount, onSelect }) => {
-    const tipOptions = [100, 200, 500];
-    const MIN_AMOUNT = 100;
-
-    const buttonStyle = (amount) => ({
-        padding: '8px 12px',
-        fontSize: '14px',
-        fontWeight: 'bold',
-        color: selectedAmount === amount ? '#fff' : 'var(--glow-accent-crimson, #c9a4ff)',
-        background: selectedAmount === amount ? 'linear-gradient(90deg, #8e2de2, #4a00e0)' : 'rgba(255, 255, 255, 0.05)',
-        border: selectedAmount === amount ? '1px solid #8e2de2' : '1px solid rgba(255, 255, 255, 0.1)',
-        borderRadius: '10px',
-        cursor: 'pointer',
-        transition: 'all 0.2s ease',
-    });
-
-    const containerStyle = {
-        display: 'flex',
-        gap: '10px',
-        justifyContent: 'center',
-        margin: '15px 0 5px 0'
-    };
-
-    const labelStyle = {
-        fontSize: '13px',
-        color: 'var(--text-secondary)',
-        marginBottom: '10px',
-        textAlign: 'center'
-    };
-
-    return (
-        <div>
-            <p style={labelStyle}>Monto por Respuesta Premium (Mínimo ${MIN_AMOUNT} MXN)</p> 
-            <div style={containerStyle}>
-                {tipOptions.map((amount) => (
-                    <button
-                        key={amount}
-                        type="button"
-                        style={buttonStyle(amount)}
-                        onClick={() => onSelect(selectedAmount === amount ? 0 : amount)} 
-                    >
-                        ${amount} MXN
-                    </button>
-                ))}
-            </div>
-            {selectedAmount === 0 && <p style={{fontSize: '12px', color: 'var(--text-secondary)', marginTop: '10px', opacity: 0.7, textAlign: 'center'}}>
-                (El mensaje se enviará sin garantía de respuesta)
-            </p>}
-        </div>
-    );
+// --- COMPONENTE EscasezCounter (S2) ---
+const EscasezCounter = ({ data, isFull }) => {
+  if (!data || data.dailyMsgLimit <= 0) return null;
+  const remaining = Math.max(0, data.dailyMsgLimit - data.msgCountToday);
+  const text = isFull ? "¡Límite diario alcanzado!" : `¡Solo quedan ${remaining} cupos Premium!`;
+  const subText = isFull ? "Vuelve mañana." : `Se reinicia cada 12 horas.`;
+  const color = isFull ? '#ff7b7b' : 'var(--success-solid, #00ff80)'; 
+  const animationStyle = { animation: `fadeInUp 0.5s ease forwards`, opacity: 0 };
+  return (
+    <div style={{
+      padding: '12px 15px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px',
+      border: `1px solid ${color}`, textAlign: 'center', marginBottom: '20px', ...animationStyle
+    }}>
+      <h4 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: color }}>
+        {text}
+      </h4>
+      <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--text-secondary)'}}>
+        {subText}
+      </p>
+    </div>
+  );
 };
+// --- FIN EscasezCounter ---
 
 
+// --- COMPONENTE PRINCIPAL (MODIFICADO) ---
 export default function AnonMessageForm({ 
-    publicId, 
-    onChatCreated,
-    escasezData, 
-    isFull,
-    creatorContract // <-- Prop con el Contrato (puede ser null al inicio)
+  publicId, 
+  onChatCreated, // (Ya no se usa aquí)
+  escasezData, 
+  isFull,
+  creatorContract,
+  topicPreference,
+  creatorName, 
+  baseTipAmountCents
 }) {
   const [alias, setAlias] = useState("");
   const [content, setContent] = useState("");
-  const [tipAmount, setTipAmount] = useState(0); 
-
+  const [paymentInput, setPaymentInput] = useState(""); 
+  const [fanEmail, setFanEmail] = useState(""); // (E2 / Tarea 4)
   const [status, setStatus] = useState("idle");
   const [errorMsg, setErrorMsg] = useState("");
-  const [charCount, setCharCount] = useState(0);
+  const [charCount, setCharCount] = useState(0); 
   const [isMounted, setIsMounted] = useState(false);
 
+  const basePrice = (baseTipAmountCents || (FALLBACK_MIN_PREMIUM_AMOUNT * 100)) / 100;
+  const totalAmount = Number(paymentInput) || 0;
+  
+  // --- 👇 CORRECCIÓN DE ERROR 'effectiveBasePrice is not defined' 👇 ---
+  // Esta variable debe ser definida aquí, fuera del handleSubmit
+  const effectiveBasePrice = Math.max(basePrice, FALLBACK_MIN_PREMIUM_AMOUNT);
+  // --- 👆 FIN DE LA CORRECCIÓN 👆 ---
+
   useEffect(() => {
-    const timer = setTimeout(() => {
+    // Usamos la variable corregida
+    const initialPrice = String(effectiveBasePrice);
+    if (!isMounted) {
+      setPaymentInput(initialPrice);
       setIsMounted(true);
-    }, 100);
-    return () => clearTimeout(timer);
-  }, []);
-    
-  // S3: Generar texto del contrato para la vista del anónimo
-  // Usará `creatorContract` si existe, o el texto por defecto si es null
+    }
+  }, [basePrice, isMounted, effectiveBasePrice]); // Añadida 'effectiveBasePrice' a las dependencias
+  
   const contractSummary = formatContract(creatorContract); 
 
+  const handlePaymentChange = (e) => {
+    const value = e.target.value.replace(/[^0-9.]/g, '');
+    setPaymentInput(value);
+  };
 
+  // --- ESTE CÓDIGO FUNCIONA IGUAL PARA STRIPE QUE PARA MERCADOPAGO ---
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrorMsg("");
+    
     if (!content.trim() || content.trim().length < 3) {
       setErrorMsg("El mensaje debe tener al menos 3 caracteres.");
       setStatus("error");
       return;
     }
     
-    // Validación de mínimo Premium (P1)
-    if (tipAmount > 0 && tipAmount < MIN_PREMIUM_AMOUNT) {
-        setErrorMsg(`El monto mínimo por respuesta premium es $${MIN_PREMIUM_AMOUNT} MXN.`);
+    if (fanEmail.trim().length > 0 && !fanEmail.includes('@')) {
+      setErrorMsg("Por favor, introduce un email válido para tu recibo.");
+      setStatus("error");
+      return;
+    }
+
+    // Usamos la variable 'effectiveBasePrice' que ya está definida fuera
+    if (totalAmount < effectiveBasePrice) {
+        setErrorMsg(`El pago mínimo es $${effectiveBasePrice.toFixed(2)} MXN.`);
         setStatus("error");
         return;
     }
     
-    // Validación de límite diario si intenta enviar un Premium (S1)
-    if (isFull && tipAmount > 0) {
-        setErrorMsg("El límite diario de mensajes Premium se ha alcanzado. Por favor, espera al reinicio.");
+    if (isFull) {
+        setErrorMsg("El límite diario de mensajes se ha alcanzado.");
         setStatus("error");
         return;
     }
     
-    setStatus("loading");
-    setErrorMsg("");
+    setStatus("loading"); // Botón muestra "Procesando..."
 
     try {
-      const res = await fetch(`${API}/public/${publicId}/messages`, {
+      // Llama al "Vendedor"
+      const res = await fetch(`${API}/public/${publicId}/create-checkout-session`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           alias, 
           content,
-          tipAmount
+          tipAmount: totalAmount,
+          fanEmail: fanEmail 
         }),
       });
 
       const data = await res.json();
       if (!res.ok) {
-        if (data.code === "TIP_ONLY_MODE") {
-             throw new Error(`Este creador solo acepta mensajes con pago. El mínimo es $${MIN_PREMIUM_AMOUNT} MXN.`);
+        if (data.code) {
+             throw new Error(data.error);
         }
-        throw new Error(data.error || "Error enviando el mensaje");
+        throw new Error(data.error || "Error al crear la sesión de pago");
       }
 
-      setStatus("success");
-
-      if (data.chatId && data.anonToken) {
-        const myChats = JSON.parse(localStorage.getItem("myChats") || "[]");
-        const otherChats = myChats.filter(chat => chat.creatorPublicId !== publicId);
-        
-        // --- CORRECCIÓN: Guardar también el contrato devuelto por la API ---
-        const newChatEntry = {
-          chatId: data.chatId,
-          anonToken: data.anonToken,
-          creatorPublicId: publicId,
-          preview: content.slice(0, 50) + (content.length > 50 ? "..." : ""),
-          ts: new Date().toISOString(),
-          creatorName: data.creatorName || "Conversación",
-          anonAlias: alias || "Anónimo",
-          hasNewReply: false, 
-          previewFrom: 'anon',
-          creatorPremiumContract: data.creatorPremiumContract // <-- Guardar el contrato
-        };
-        // --- FIN CORRECCIÓN ---
-
-        const updatedChats = [newChatEntry, ...otherChats];
-        localStorage.setItem("myChats", JSON.stringify(updatedChats));
-
-        if (typeof onChatCreated === "function") {
-          onChatCreated(newChatEntry); // Pasamos el objeto completo
-        }
+      // Redirige a la URL de pago (sea Stripe o MP)
+      if (data.url) { 
+          window.location.href = data.url;
+      } else {
+          throw new Error("No se recibió el link de pago.");
       }
+
     } catch (err) {
       setStatus("error");
       setErrorMsg(err.message);
+      setStatus("idle"); 
     }
   };
+  
+  const isDisabled = status === "loading" || !content.trim() || isFull || totalAmount < effectiveBasePrice;
+  const buttonText = `Pagar y Enviar $${(totalAmount || effectiveBasePrice).toFixed(2)}`;
+  const placeholderText = topicPreference 
+      ? `Escribe sobre: "${topicPreference}"` 
+      : "Escribe tu mensaje anónimo...";
 
   return (
     <div className={`anon-form-container ${isMounted ? 'mounted' : ''}`}>
+      
+      <EscasezCounter data={escasezData} isFull={isFull} />
+
       <form onSubmit={handleSubmit} className="form-element-group">
         
-        {/* --- S3: Contrato de Servicio Visible para el Anónimo --- */}
-        <div className="contract-summary-box" style={{ 
-            padding: '15px', 
-            background: 'rgba(142, 45, 226, 0.15)', 
-            borderRadius: '12px',
-            border: '1px solid rgba(142, 45, 226, 0.4)',
-            marginBottom: '20px'
-        }}>
-            <h4 style={{ fontSize: '16px', margin: '0 0 5px', color: 'var(--text-primary)' }}>
-                Contrato de Servicio Premium:
-            </h4>
-            <p style={{ margin: 0, fontSize: '14px', color: 'var(--glow-accent-crimson)', fontWeight: 'bold' }}>
-                {contractSummary}
-            </p>
-        </div>
-        {/* --- FIN S3 --- */}
-
         <input
             type="text"
             placeholder="Tu alias (opcional)"
@@ -232,8 +172,17 @@ export default function AnonMessageForm({
             onChange={(e) => setAlias(e.target.value)}
             className="form-input-field"
           />
-          <textarea
-            placeholder="Escribe tu mensaje anónimo..."
+        
+        <input
+            type="email"
+            placeholder="Tu email (opcional, para recibo)"
+            value={fanEmail}
+            onChange={(e) => setFanEmail(e.target.value)}
+            className="form-input-field"
+          />
+
+        <textarea
+            placeholder={placeholderText}
             value={content}
             onChange={(e) => {
               setContent(e.target.value);
@@ -242,34 +191,63 @@ export default function AnonMessageForm({
             className="form-input-field"
             rows="4"
             maxLength="500"
-          ></textarea>
+        ></textarea>
           
-          <div className="char-counter">
-            {charCount} / 500
-          </div>
-          
-          {/* --- BLOQUE TipSelector --- */}
-          <TipSelector 
-            selectedAmount={tipAmount}
-            onSelect={setTipAmount}
-          />
-          {/* --- FIN DEL BLOQUE --- */}
+        <div className="char-counter">{charCount} / 500</div>
 
-        <button type="submit" disabled={status === "loading" || !content.trim()} className="submit-button">
-          {status === "loading" ? "Enviando..." : (tipAmount > 0 ? `Pagar y Enviar $${tipAmount}` : "Enviar Mensaje Gratis")}
+        <div className="contract-summary-box" style={{ 
+            padding: '15px', background: 'rgba(255, 255, 255, 0.05)', 
+            borderRadius: '12px', border: '1px solid var(--border-color-faint)', 
+            marginBottom: '20px', textAlign: 'center'
+        }}>
+          <h4 style={{ 
+              fontSize: '14px', margin: '0 0 8px', 
+              color: 'var(--text-secondary)', fontWeight: '600'
+          }}>
+              Garantía del Creador (MVP):
+          </h4>
+          <p style={{ 
+              margin: 0, fontSize: '15px', 
+              color: 'var(--glow-accent-crimson)', fontWeight: 'bold' 
+          }}>
+              {contractSummary} 
+          </p>
+        </div>
+
+        <div className="payment-section" style={{
+            borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+            paddingTop: '15px', marginTop: '0px'     
+        }}>
+            <label htmlFor="payment" className="payment-label">
+              Monto por Respuesta Premium (Mínimo ${basePrice.toFixed(2)} MXN)
+            </label>
+            <div className="payment-input-group">
+              <span className="currency-symbol">$</span>
+              <input
+                  type="text"
+                  inputMode="decimal" 
+                  id="payment"
+                  value={paymentInput}
+                  onChange={handlePaymentChange}
+                  placeholder={String(basePrice)}
+                  className="payment-input" 
+                  style={{ color: totalAmount < basePrice ? '#ff7b7b' : 'var(--text-primary)' }}
+              />
+              <span className="currency-symbol">MXN</span>
+            </div>
+            <p className="payment-priority-text">
+              Puedes ofrecer más para priorizar tu mensaje.
+            </p>
+        </div>
+
+        <button type="submit" disabled={isDisabled} className="submit-button" style={{marginTop: '20px'}}>
+          {status === "loading" ? "Redirigiendo a pago..." : buttonText}
         </button>
       </form>
 
-      {status === "success" && (
-        <div className="form-status-message success">
-          <p>✅ ¡Mensaje Enviado! {tipAmount > 0 ? `Tu pago de $${tipAmount} MXN está retenido hasta que el creador te responda.` : "Se ha enviado tu mensaje."}</p>
-          <p className="sub-text">Puedes ver el estado en tu <a href="/chats">bandeja de chats</a>.</p>
-        </div>
-      )}
-
       {status === "error" && (
         <div className="form-status-message error">
-          <p>{errorMsg || "Hubo un error al enviar tu mensaje."}</p>
+          <p>{errorMsg || "Hubo un error al procesar tu solicitud."}</p>
         </div>
       )}
     </div>
