@@ -1,7 +1,8 @@
 // src/app/chats/[anonToken]/[chatId]/page.jsx
 "use client";
-import React, { useEffect, useState, useRef, useCallback } from "react"; // Añadir useCallback
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useParams } from "next/navigation";
+import { timeAgo } from "@/utils/timeAgo"; 
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
 
@@ -10,16 +11,19 @@ export default function PublicChatPage() {
   const { anonToken, chatId } = params;
 
   const [messages, setMessages] = useState([]);
-  const [newMsg, setNewMsg] = useState("");
   const [creatorName, setCreatorName] = useState("Respuesta");
-  const [anonAlias, setAnonAlias] = useState("Tú"); // En la vista pública, el anónimo es "Tú"
+  const [anonAlias, setAnonAlias] = useState("Tú"); 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const [linkCopied, setLinkCopied] = useState(false);
+
+  const [creatorStatus, setCreatorStatus] = useState({ status: 'offline', lastActiveAt: null });
+  const [lastActiveDisplay, setLastActiveDisplay] = useState(null);
 
   const bottomRef = useRef(null);
   const wsRef = useRef(null);
 
-  // --- Función para marcar como leído ---
   const markChatAsRead = useCallback(() => {
     try {
         const storedChats = JSON.parse(localStorage.getItem("myChats") || "[]");
@@ -32,29 +36,24 @@ export default function PublicChatPage() {
     } catch (e) {
         console.error("Error updating localStorage:", e);
     }
-  }, [chatId, anonToken]); // Dependencias: chatId y anonToken
+  }, [chatId, anonToken]); 
 
-  // Scroll automático al fondo
   useEffect(() => {
     if (bottomRef.current) {
       bottomRef.current.scrollIntoView({ behavior: "smooth" });
     }
-     // Marcar como leído cuando los mensajes cambian (o inicialmente)
      markChatAsRead();
-  }, [messages, markChatAsRead]); // Incluir markChatAsRead
+  }, [messages, markChatAsRead]);
 
-  // ... (Recuperar alias y nombre guardados - sin cambios) ...
    useEffect(() => {
     const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
     const found = stored.find(
       (c) => c.chatId === chatId && c.anonToken === anonToken
     );
-    // Nota: Aquí no establecemos anonAlias porque en esta vista siempre es "Tú"
     if (found?.creatorName) setCreatorName(found.creatorName);
-    // if (found?.anonAlias) setAnonAlias(found.anonAlias); <--- Esto no es necesario aquí
+    if (found?.anonAlias) setAnonAlias(found.anonAlias);
   }, [chatId, anonToken]);
 
-  // Función para guardar actualizaciones en localStorage (si es necesario)
    const updateLocalStorage = useCallback((updater) => {
         try {
             const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
@@ -68,10 +67,8 @@ export default function PublicChatPage() {
    }, [chatId, anonToken]);
 
 
-  // Cargar mensajes iniciales y conectar WebSocket
   useEffect(() => {
     const fetchMessages = async () => {
-      // ... (lógica fetchMessages sin cambios, pero usamos updateLocalStorage) ...
       try {
             setError(null);
             const res = await fetch(`${API}/chats/${anonToken}/${chatId}`);
@@ -83,30 +80,32 @@ export default function PublicChatPage() {
 
               if (data.creatorName) {
                 setCreatorName(data.creatorName);
-                // Usamos la función para actualizar
                 updateLocalStorage((c) => ({ ...c, creatorName: data.creatorName }));
               }
+              
+              if (data.creatorLastActive) {
+                const status = { status: 'offline', lastActiveAt: data.creatorLastActive };
+                setCreatorStatus(status);
+                setLastActiveDisplay(timeAgo(data.creatorLastActive));
+              }
+              
               markChatAsRead();
 
             } else {
-                setMessages([]); // Asegura que messages sea un array
+                setMessages([]); 
             }
           } catch (err) {
             console.error(err);
             setError("⚠️ Error cargando mensajes");
-            setMessages([]); // Asegura que messages sea un array en caso de error
+            setMessages([]); 
           } finally {
             setLoading(false);
           }
     };
 
-    fetchMessages(); // Carga inicial
+    fetchMessages();
 
-    // --- 👇 AQUÍ ESTÁ LA CORRECCIÓN 👇 ---
-    // El servidor (websocket.js) espera "anonTokens" (plural)
     const wsUrl = `${API.replace(/^http/, "ws")}/ws?anonTokens=${anonToken}`;
-    // --- 👆 FIN DE LA CORRECCIÓN 👆 ---
-
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
@@ -115,74 +114,61 @@ export default function PublicChatPage() {
      ws.onclose = () => console.log(`WebSocket desconectado (Anónimo)`);
 
     ws.onmessage = (event) => {
-      // ... (lógica onmessage sin cambios, pero llama a markChatAsRead) ...
       try {
             const msg = JSON.parse(event.data);
             
-            // --- MODIFICACIÓN: Chequeo más simple ---
-            // Si el mensaje es de tipo 'message' y es de 'creator', lo añadimos.
-            // El backend ya se encarga de enviarlo solo al anonToken correcto.
             if (msg.type === "message" && msg.from === "creator") { 
                 setMessages((prev) => {
-                    // Evitar duplicados
                     if (prev.some(m => m.id === msg.id)) return prev;
                     return [...prev, msg];
                 });
-                // Marcar como leído si la ventana está activa
+                
+                updateLocalStorage((c) => ({ ...c, hasNewReply: true }));
+                
                 if (document.visibilityState === 'visible') {
                     markChatAsRead();
                 }
+                setCreatorStatus({ status: 'online', lastActiveAt: new Date().toISOString() });
             }
+
+            if (msg.type === 'CREATOR_STATUS_UPDATE') {
+              setCreatorStatus(prev => ({ ...prev, status: msg.status }));
+              if (msg.status === 'offline') {
+                const now = new Date().toISOString();
+                setCreatorStatus(prev => ({ ...prev, lastActiveAt: now }));
+                setLastActiveDisplay(timeAgo(now));
+              }
+            }
+
         } catch (e) {
             console.error("Error procesando WebSocket:", e);
         }
     };
 
-    // Limpieza
     return () => {
       if (wsRef.current) {
         wsRef.current.close();
       }
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chatId, anonToken, updateLocalStorage]); // Incluir updateLocalStorage
+  }, [chatId, anonToken, updateLocalStorage, markChatAsRead]);
 
-  // Enviar mensaje
-  const handleSend = async (e) => {
-    // ... (lógica handleSend sin cambios) ...
-    e.preventDefault();
-        if (!newMsg.trim()) return;
-        const tempMsg = newMsg;
-        setNewMsg(""); // Limpia input inmediatamente
-        try {
-          const res = await fetch(`${API}/chats/${anonToken}/${chatId}/messages`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ content: tempMsg }),
-          });
-          if (!res.ok) {
-              const errorData = await res.json();
-              throw new Error(errorData.error || "No se pudo enviar el mensaje");
-          }
-          // No necesitamos añadir el mensaje aquí, esperamos al WebSocket
-        } catch (err) {
-          console.error(err);
-          setError("⚠️ No se pudo enviar el mensaje. Intenta de nuevo.");
-          setNewMsg(tempMsg); // Restaurar si falla
-        }
-  };
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (creatorStatus.status === 'offline' && creatorStatus.lastActiveAt) {
+        setLastActiveDisplay(timeAgo(creatorStatus.lastActiveAt));
+      }
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [creatorStatus]);
 
-   // Componente Message (adaptado para esta vista)
    const Message = ({ msg, creatorName }) => {
         const isCreator = msg.from === "creator";
-        const senderName = isCreator ? creatorName : "Tú"; // Anónimo siempre es "Tú" aquí
+        const senderName = isCreator ? creatorName : (anonAlias || "Tú"); 
 
         return (
-             // Alineación: Creador a la izquierda ('anon'), Anónimo a la derecha ('creator')
             <div className={`message-bubble-wrapper ${isCreator ? 'anon' : 'creator'}`}>
               <div>
                   <div className="message-alias">{senderName}</div>
-                   {/* Estilo: Creador gris ('anon'), Anónimo púrpura ('creator') */}
                   <div className={`message-bubble ${isCreator ? 'anon' : 'creator'}`}>
                       {msg.content}
                   </div>
@@ -191,23 +177,49 @@ export default function PublicChatPage() {
         );
     };
 
+  const copyPageUrl = () => {
+    if (typeof window !== "undefined") {
+      const url = window.location.href;
+      navigator.clipboard.writeText(url)
+        .then(() => {
+          setLinkCopied(true);
+          setTimeout(() => setLinkCopied(false), 2000);
+        })
+        .catch(err => console.error("Error al copiar:", err));
+    }
+  };
+
   if (loading) return <p style={{ padding: 20, textAlign: 'center', color: 'var(--text-secondary)' }}>Cargando chat…</p>;
 
+  const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
+  const isWaitingForReply = !lastMessage || lastMessage.from === 'anon';
+
   return (
-    // Reutilizamos clases de la vista unificada si es posible
     <div className="public-chat-view" style={{ maxWidth: 600, margin: "40px auto", padding: 20, height: 'auto', maxHeight: 'none' }}>
+      
       <div className="chat-view-header">
-           <h1>Chat con {creatorName}</h1>
-           {/* Puedes añadir un botón para volver a la lista si quieres */}
-           {/* <button onClick={() => router.back()} className="back-button">← Volver</button> */}
+           <div className="chat-header-info">
+             <h3>Chat con {creatorName}</h3>
+             <div className="chat-header-status">
+              {creatorStatus.status === 'online' ? (
+                <span className="status-online">En línea</span>
+              ) : lastActiveDisplay ? (
+                <span className="status-offline">Activo {lastActiveDisplay}</span>
+              ) : (
+                <span className="status-offline" style={{opacity: 0.6}}>...</span>
+              )}
+             </div>
+           </div>
+           <a href="/chats" className="back-button" style={{ textDecoration: 'none' }}>← Mis Chats</a>
       </div>
 
+      {/* EL BLOQUE DE SEGURIDAD YA NO ESTÁ AQUÍ ARRIBA */}
+
       <div className="messages-display">
-        {/* ... (renderizado de mensajes y error sin cambios) ... */}
         {error && <p style={{ color: "red", textAlign: 'center' }}>{error}</p>}
         {messages.length === 0 && !loading && (
               <div style={{ color: "#666", textAlign: "center", padding: '20px' }}>
-                Aún no hay mensajes. ¡Envía el primero!
+                Aún no hay mensajes.
               </div>
         )}
          {messages.map((m) => (
@@ -216,23 +228,66 @@ export default function PublicChatPage() {
         <div ref={bottomRef} />
       </div>
 
-      <form onSubmit={handleSend} className="chat-reply-form">
-         {/* ... (input y botón sin cambios) ... */}
-         <input
-              type="text"
-              value={newMsg}
-              onChange={(e) => setNewMsg(e.target.value)}
-              placeholder="Escribe un mensaje..."
-              className="form-input-field reply-input" // Reutilizar estilos
-            />
-            <button
-              type="submit"
-              className="submit-button reply-button" // Reutilizar estilos
-              disabled={!newMsg.trim()}
+      <div className="chat-footer" style={{paddingTop: '15px', borderTop: '1px solid rgba(255, 255, 255, 0.1)'}}>
+        {isWaitingForReply ? (
+          <div className="waiting-indicator">
+            <span>Esperando respuesta de {creatorName}</span>
+            <div className="waiting-dots">
+              <span>.</span><span>.</span><span>.</span>
+            </div>
+          </div>
+        ) : (
+          <div className="waiting-indicator" style={{animation: 'none', opacity: 0.7, color: 'var(--success-solid)'}}>
+            <span>¡Respuesta recibida! El chat ha finalizado.</span>
+          </div>
+        )}
+
+        {/* --- 👇 AHORA EL BLOQUE ESTÁ AQUÍ ABAJO 👇 --- */}
+        <div style={{
+            background: 'rgba(255, 193, 7, 0.1)', 
+            border: '1px solid rgba(255, 193, 7, 0.3)',
+            borderRadius: '12px',
+            padding: '12px',
+            marginTop: '20px', // Añadido margen superior para separar del "Esperando..."
+            marginBottom: '10px',
+            fontSize: '13px',
+            color: '#ffeeba',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '15px',
+            animation: 'fadeInUp 0.5s ease forwards'
+        }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <strong style={{ color: '#ffc107' }}>⚠ Importante:</strong>
+              <span style={{ opacity: 0.9 }}>
+                Esta página fue enviada a tu email. Guarda este enlace, podrías perder el chat.
+              </span>
+            </div>
+            
+            <button 
+              onClick={copyPageUrl}
+              style={{
+                  background: linkCopied ? 'rgba(40, 167, 69, 0.2)' : 'rgba(255, 193, 7, 0.15)',
+                  border: `1px solid ${linkCopied ? '#28a745' : 'rgba(255, 193, 7, 0.5)'}`,
+                  color: linkCopied ? '#75b798' : '#ffc107',
+                  padding: '8px 14px',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                  whiteSpace: 'nowrap',
+                  transition: 'all 0.2s ease',
+                  minWidth: '90px',
+                  textAlign: 'center'
+              }}
             >
-              Enviar
+              {linkCopied ? "¡Copiado!" : "Copiar Link"}
             </button>
-      </form>
+        </div>
+        {/* --- 👆 FIN DEL BLOQUE DE SEGURIDAD 👆 --- */}
+      </div>
+      
     </div>
   );
 }

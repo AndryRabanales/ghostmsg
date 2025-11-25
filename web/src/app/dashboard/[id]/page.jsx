@@ -6,9 +6,8 @@ import { refreshToken, getAuthHeaders } from "@/utils/auth";
 import MessageList from "@/components/MessageList";
 import DashboardInfo from "@/components/DashboardInfo";
 import ShareLinkGuideModal from "@/components/ShareLinkGuideModal";
-import PremiumContractConfig from "@/components/PremiumContractConfig";
-
-// --- 👇 1. AÑADE LA NUEVA IMPORTACIÓN 👇 ---
+// 👇 Importamos el nuevo componente
+import TopicConfig from "@/components/TopicConfig"; 
 import PriceConfig from "@/components/PriceConfig";
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
@@ -23,7 +22,6 @@ const FullPageLoader = () => (
     </div>
 );
 
-
 export default function DashboardPage() {
     const { id } = useParams();
     const router = useRouter();
@@ -31,7 +29,7 @@ export default function DashboardPage() {
     const [loading, setLoading] = useState(true);
     const [showShareGuideModal, setShowShareGuideModal] = useState(false);
 
-    const pageStyles = ` /* ... (tus estilos pageStyles sin cambios) ... */ `;
+    const pageStyles = ``; // Tus estilos aquí
 
     const handleAuthFailure = useCallback(() => {
         localStorage.clear();
@@ -89,7 +87,6 @@ export default function DashboardPage() {
 
     useEffect(() => {
         fetchDashboardData();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const closeShareGuideModal = useCallback(() => {
@@ -118,22 +115,20 @@ export default function DashboardPage() {
                             <DashboardInfo creator={creator} onChange={setCreator} />
                         </div>
 
-                        {/* --- 👇 2. MODIFICACIÓN AQUÍ 👇 --- */}
                         <div className="fade-in-up" style={{ 
                             animationDelay: '0.2s', 
                             marginBottom: '25px', 
-                            background: 'var(--background-core)', // Fondo oscuro
+                            background: 'var(--background-core)',
                             borderRadius: '20px',
                             border: '1px solid var(--border-color-faint)',
-                            padding: '20px' // Espaciado interno
+                            padding: '20px' 
                         }}>
-                            {/* Componente de Contrato (existente) */}
-                            <PremiumContractConfig creator={creator} onChange={setCreator} />
+                            {/* ✅ AQUI ESTÁ: Configuración de Tema */}
+                            <TopicConfig creator={creator} onChange={setCreator} />
 
-                            {/* Componente de Precio (NUEVO) */}
+                            {/* ✅ AQUI ESTÁ: Configuración de Precio */}
                             <PriceConfig creator={creator} onChange={setCreator} />
                         </div>
-                        {/* --- 👆 FIN DE LA MODIFICACIÓN 👆 --- */}
 
                         <div className="fade-in-up" style={{ animationDelay: '0.3s' }}>
                             <MessageList dashboardId={id} />

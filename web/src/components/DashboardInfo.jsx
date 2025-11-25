@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 
 // --- AÑADIDO: Importar el nuevo componente ---
 import BalanceSummary from "./BalanceSummary"; 
-import PremiumButton from "./PremiumButton";
 
 // ... (const CopyIcon, const LinkInput, const ArrowIcon ... sin cambios) ...
 const CopyIcon = () => (
@@ -83,10 +82,6 @@ export default function DashboardInfo({ creator, onChange }) {
         {/* --- AÑADIDO: El componente de Balance --- */}
         {/* Lo colocamos antes del botón Premium */}
         <BalanceSummary creator={creator} />
-
-        {/* 2. PremiumButton */}
-        <PremiumButton creator={creator} onChange={onChange} />
-
       </div>
       
       {/* Botón de colapso */}

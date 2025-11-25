@@ -1,184 +1,122 @@
 // src/components/BalanceSummary.jsx
 "use client";
-// --- MODIFICADO: Importar 'useState' y las utilidades de auth ---
-import React, { useState } from "react";
-import { getAuthHeaders, refreshToken } from "@/utils/auth"; 
-
-const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
-const MIN_WITHDRAWAL_AMOUNT = 1000; // <-- AÑADIDO: $1000 MXN, Mínimo de retiro (P5)
-
-// --- AÑADIDO: Definición de Iconos (MoneyIcon y ClockIcon) ---
-// Icono de Dólar
-const MoneyIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="12" y1="1" x2="12" y2="23" />
-    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-  </svg>
-);
-
-// Icono de Reloj
-const ClockIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10" />
-    <polyline points="12 6 12 12 16 14" />
-  </svg>
-);
-// --- FIN AÑADIDO ---
-
+import { useState } from "react";
 
 export default function BalanceSummary({ creator }) {
-  // --- AÑADIDO: Estado de carga para el botón ---
   const [loading, setLoading] = useState(false);
-  // --- AÑADIDO: Estado para el mensaje de estado (retiro) ---
-  const [statusMessage, setStatusMessage] = useState(null); 
-  const [isError, setIsError] = useState(false);
+  const API = (process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app").replace(/\/$/, "");
 
-  if (!creator) return null;
-
-  // Formatear a moneda (sin cambios)
-  const formatCurrency = (amount) => {
-    return `$${(amount || 0).toFixed(2)} MXN`;
+  const startOnboarding = async () => {
+    // ... (Misma lógica de tu archivo anterior)
+    try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${API}/creators/stripe-onboarding`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+            body: JSON.stringify({}) 
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Error al iniciar configuración.");
+        if (data.onboarding_url) window.location.href = data.onboarding_url;
+    } catch (e) { alert(e.message || "Error conectando con Stripe."); }
   };
 
-  // --- INICIO DE LA MODIFICACIÓN: Lógica del botón de retiro (P5) ---
-  const handleWithdraw = async () => {
+  const handleOpenStripe = async () => {
+    // ... (Misma lógica de tu archivo anterior)
     setLoading(true);
-    setStatusMessage(null);
-    setIsError(false);
-    
-    // 1. Lógica de Onboarding (Prioridad 1, se mantiene)
-    if (!creator.stripeAccountOnboarded) {
-        // Simulación de llamada API para configurar Stripe
-        try {
-          let res = await fetch(`${API}/creators/stripe-onboarding`, {
-            method: 'POST',
-            headers: getAuthHeaders(),
-          });
-    
-          // Lógica de refresh si el token expiró
-          if (res.status === 401) {
-            const newToken = await refreshToken(localStorage.getItem("publicId"));
-            if (newToken) {
-              res = await fetch(`${API}/creators/stripe-onboarding`, {
-                method: 'POST',
-                headers: getAuthHeaders(newToken),
-              });
-            } else {
-              throw new Error("Sesión inválida, por favor inicia sesión de nuevo.");
-            }
-          }
-    
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.details || "No se pudo generar el link de configuración");
-    
-          if (data.onboarding_url) {
-            window.location.href = data.onboarding_url;
-          } else {
-            throw new Error("No se pudo obtener la URL de configuración.");
-          }
-    
-        } catch (err) {
-          console.error("❌ Error al crear link de Stripe Connect:", err);
-          setStatusMessage(`Error: ${err.message}`);
-          setIsError(true);
-          setLoading(false);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API}/creators/stripe-dashboard`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        if (res.status === 400) {
+             alert("⚠️ Tu conexión necesita actualizarse. Redirigiendo...");
+             await startOnboarding(); return;
         }
-        return;
-    }
-    
-    // 2. Lógica de Retiro (P5) - Solo si la cuenta está configurada
-    if (creator.availableBalance < MIN_WITHDRAWAL_AMOUNT) {
-        setStatusMessage(`El retiro mínimo es de ${formatCurrency(MIN_WITHDRAWAL_AMOUNT)}.`);
-        setIsError(true);
-        setLoading(false);
-        return;
-    }
-    
-    // 3. Simulación de Solicitud Exitosa (MVP Hack - P5)
-    const withdrawalAmount = creator.availableBalance;
-    
-    // Mostramos el mensaje de éxito por 5 segundos
-    setStatusMessage(`✅ Solicitud de retiro por ${formatCurrency(withdrawalAmount)} procesada. Recibirás el pago en 3-5 días hábiles (MVP Hack).`);
-    setIsError(false);
-    
-    // SIMULACIÓN: En un entorno real, el backend pondría availableBalance a 0.
-    // Aquí solo borramos el mensaje después de un tiempo.
-    setTimeout(() => {
-        setStatusMessage(null);
-    }, 5000);
-
-    setLoading(false);
+        throw new Error(data.error || "Error al abrir panel.");
+      }
+      if (data.url) window.location.href = data.url;
+    } catch (error) { alert(error.message); } finally { setLoading(false); }
   };
-  // --- FIN DE LA MODIFICACIÓN (P5) ---
 
-  // Texto del botón y estado 'disabled'
-  const isAccountReady = creator.stripeAccountOnboarded;
-  const isBalanceSufficient = creator.availableBalance >= MIN_WITHDRAWAL_AMOUNT;
+  const isReady = creator.stripeAccountId && creator.stripeAccountOnboarded;
   
-  let buttonText = isAccountReady ? "Retirar" : "Configurar Cuenta";
-  
-  if (isAccountReady && creator.availableBalance > 0 && !isBalanceSufficient) {
-      buttonText = `Retirar ($${MIN_WITHDRAWAL_AMOUNT} min)`;
-  } else if (isAccountReady && creator.availableBalance > 0 && isBalanceSufficient) {
-      buttonText = "Retirar";
-  }
-  
-  const buttonDisabled = loading || (isAccountReady && !isBalanceSufficient && creator.availableBalance > 0) || (isAccountReady && creator.availableBalance === 0);
+  // Formateador de moneda
+  const formatMoney = (amount) => {
+    return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(amount);
+  };
 
   return (
-    <div className="balance-container">
-      <h3 className="balance-title">Tu Balance (Simulado)</h3>
+    <div className="w-full p-6 bg-[#1a1a2e] rounded-2xl border border-[#2c1a5c] mb-8 shadow-lg">
       
-      {/* Balance Disponible (FULFILLED) */}
-      <div className="balance-section available">
-        <div className="balance-icon"><MoneyIcon /></div>
-        <div className="balance-details">
-          <span className="balance-label">Disponible para retirar</span>
-          <span className="balance-amount">
-            {formatCurrency(creator.availableBalance)}
-          </span>
+      {/* --- SECCIÓN SUPERIOR: ESTADO DE CONEXIÓN --- */}
+      <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-6 pb-6 border-b border-[rgba(142,45,226,0.2)]">
+        <div className="text-center md:text-left">
+            <h2 className="text-gray-400 text-sm font-bold uppercase tracking-wider mb-1">
+                ESTADO DE CUENTA
+            </h2>
+            <div className="flex items-center justify-center md:justify-start gap-3">
+                <div className={`w-3 h-3 rounded-full ${isReady ? 'bg-[#00ff80] shadow-[0_0_10px_#00ff80]' : 'bg-yellow-500 animate-pulse'}`}></div>
+                <span className={`text-xl font-black ${isReady ? 'text-white' : 'text-yellow-500'}`}>
+                    {isReady ? 'Conectado a Stripe' : 'Configuración Requerida'}
+                </span>
+            </div>
         </div>
-        
-        {/* Botón de Retiro */}
-        <button 
-          className="withdraw-button" 
-          onClick={handleWithdraw}
-          disabled={buttonDisabled}
-        >
-          {loading ? "Cargando..." : buttonText}
-        </button>
+        <div>
+            {!isReady ? (
+                <button 
+                    onClick={() => { setLoading(true); startOnboarding().finally(() => setLoading(false)); }}
+                    disabled={loading}
+                    className="bg-white text-black px-5 py-2 rounded-xl font-bold hover:scale-105 transition-transform text-sm"
+                >
+                    {loading ? "Cargando..." : "🏦 Conectar Banco"}
+                </button>
+            ) : (
+                <button 
+                    onClick={handleOpenStripe}
+                    disabled={loading}
+                    className="bg-[rgba(255,255,255,0.1)] text-white px-5 py-2 rounded-xl font-bold hover:bg-[rgba(255,255,255,0.2)] transition-all text-sm border border-[rgba(255,255,255,0.2)]"
+                >
+                    {loading ? "Abriendo..." : "Ver Panel Stripe ↗"}
+                </button>
+            )}
+        </div>
       </div>
 
-      {/* Balance Pendiente (PENDING) (sin cambios) */}
-      <div className="balance-section pending">
-        <div className="balance-icon"><ClockIcon /></div>
-        <div className="balance-details">
-          <span className="balance-label">Pendiente de respuesta</span>
-          <span className="balance-amount">
-            {formatCurrency(creator.pendingBalance)}
-          </span>
-        </div>
-      </div>
-      
-      {/* Mensaje de estado/error (P5) */}
-      {statusMessage && (
-        <p style={{ 
-            fontSize: '13px', 
-            textAlign: 'center', 
-            color: isError ? '#ff7b7b' : '#00ff80', 
-            marginTop: '10px',
-            fontWeight: '600'
-        }}>
-            {statusMessage}
-        </p>
-      )}
+      {/* --- SECCIÓN INFERIOR: DESGLOSE DE SALDOS --- */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          
+          {/* 1. DISPONIBLE (Verde) */}
+          <div className="bg-[rgba(0,255,128,0.05)] border border-[rgba(0,255,128,0.2)] p-4 rounded-xl text-center">
+             <div className="text-[#00ff80] text-xs font-bold uppercase mb-1">Transferido / Disponible</div>
+             <div className="text-2xl font-black text-white">{formatMoney(creator.availableBalance || 0)}</div>
+             <p className="text-[10px] text-gray-400 mt-1">En tu cuenta Stripe</p>
+          </div>
 
-      {/* Mostramos esta nota si aún no han configurado su cuenta de Stripe */}
-      {!creator.stripeAccountOnboarded && (
-         <p className="balance-setup-note">
-           Para retirar tus fondos, necesitas configurar tu cuenta de cobro.
-         </p>
-      )}
+          {/* 2. EN PROCESO (Amarillo/Naranja) - ESTA ES LA CLAVE */}
+          <div className="bg-[rgba(255,193,7,0.05)] border border-[rgba(255,193,7,0.2)] p-4 rounded-xl text-center relative overflow-hidden">
+             {/* Pequeña animación de carga para indicar proceso */}
+             {(creator.processingBalance > 0) && (
+                 <div className="absolute top-0 left-0 w-full h-1 bg-yellow-500 opacity-20 animate-pulse"></div>
+             )}
+             <div className="text-yellow-400 text-xs font-bold uppercase mb-1">En Camino (Banco)</div>
+             <div className="text-2xl font-black text-white">{formatMoney(creator.processingBalance || 0)}</div>
+             <p className="text-[10px] text-gray-400 mt-1">
+                 {creator.processingBalance > 0 ? "Llega en 2-4 días hábiles" : "Sin pagos en cola"}
+             </p>
+          </div>
+
+          {/* 3. PENDIENTE (Gris/Morado) */}
+          <div className="bg-[rgba(142,45,226,0.05)] border border-[rgba(142,45,226,0.2)] p-4 rounded-xl text-center opacity-80">
+             <div className="text-[#c9a4ff] text-xs font-bold uppercase mb-1">Por Ganar</div>
+             <div className="text-2xl font-black text-white">{formatMoney(creator.pendingBalance || 0)}</div>
+             <p className="text-[10px] text-gray-400 mt-1">Responde para liberar</p>
+          </div>
+
+      </div>
     </div>
   );
 }

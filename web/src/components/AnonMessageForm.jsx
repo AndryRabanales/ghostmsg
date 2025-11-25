@@ -1,129 +1,106 @@
-// Contenido para: andryrabanales/ghost-web/ghost-web-4463a987f3e90131385d89dd5aff2cb04da1e0d4/src/components/AnonMessageForm.jsx
+// src/components/AnonMessageForm.jsx
 "use client";
 import { useState, useEffect } from "react";
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
-const FALLBACK_MIN_PREMIUM_AMOUNT = 200; 
+const FALLBACK_MIN_PREMIUM_AMOUNT = 100; // Mínimo $100 (PISO FIRME)
 
-// --- FUNCIÓN DE FORMATEO DE CONTRATO (S3) ---
-// --- TAREA 3: Modificada para eliminar promesas de "fotos" ---
-const formatContract = (contractData) => {
-    if (typeof contractData === 'string' && contractData.trim().length > 0) {
-        return contractData.trim();
-    }
-    return "Respuesta de texto garantizada (mín. 40 caracteres).";
-}
-// --- FIN: Función de Formato (S3) ---
+// --- COMPONENTE DE URGENCIA MEJORADO (Muestra cupos reales) ---
+const ActivityIndicator = ({ remaining }) => {
+  // Si quedan pocos (ej. menos de 5), lo ponemos en amarillo/naranja para urgencia
+  const isLow = remaining <= 5;
+  const color = isLow ? '#ffc107' : 'var(--success-solid)';
 
-
-// --- COMPONENTE EscasezCounter (S2) ---
-const EscasezCounter = ({ data, isFull }) => {
-  if (!data || data.dailyMsgLimit <= 0) return null;
-  const remaining = Math.max(0, data.dailyMsgLimit - data.msgCountToday);
-  const text = isFull ? "¡Límite diario alcanzado!" : `¡Solo quedan ${remaining} cupos Premium!`;
-  const subText = isFull ? "Vuelve mañana." : `Se reinicia cada 12 horas.`;
-  const color = isFull ? '#ff7b7b' : 'var(--success-solid, #00ff80)'; 
-  const animationStyle = { animation: `fadeInUp 0.5s ease forwards`, opacity: 0 };
   return (
-    <div style={{
-      padding: '12px 15px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px',
-      border: `1px solid ${color}`, textAlign: 'center', marginBottom: '20px', ...animationStyle
+    <div style={{ 
+      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+      marginBottom: '20px', fontSize: '14px', color: color, fontWeight: '700',
+      textTransform: 'uppercase', letterSpacing: '0.5px'
     }}>
-      <h4 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: color }}>
-        {text}
-      </h4>
-      <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--text-secondary)'}}>
-        {subText}
-      </p>
+      <span style={{ 
+        width: '10px', height: '10px', backgroundColor: color, 
+        borderRadius: '50%', boxShadow: `0 0 10px ${color}`,
+        animation: 'pulse-indicator 1.5s infinite' 
+      }}></span>
+      {remaining > 0 
+        ? `⚡ Cupos restantes hoy: ${remaining}` 
+        : `⛔ Cupos agotados por hoy`
+      }
     </div>
   );
 };
-// --- FIN EscasezCounter ---
 
-
-// --- COMPONENTE PRINCIPAL (MODIFICADO) ---
 export default function AnonMessageForm({ 
-  publicId, 
-  onChatCreated, // (Ya no se usa aquí)
-  escasezData, 
-  isFull,
-  creatorContract,
-  topicPreference,
-  creatorName, 
-  baseTipAmountCents
+  publicId, topicPreference, baseTipAmountCents, isFull, escasezData 
 }) {
-  const [alias, setAlias] = useState("");
   const [content, setContent] = useState("");
   const [paymentInput, setPaymentInput] = useState(""); 
-  const [fanEmail, setFanEmail] = useState(""); // (E2 / Tarea 4)
+  const [fanEmail, setFanEmail] = useState(""); 
   const [status, setStatus] = useState("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const [charCount, setCharCount] = useState(0); 
   const [isMounted, setIsMounted] = useState(false);
 
   const basePrice = (baseTipAmountCents || (FALLBACK_MIN_PREMIUM_AMOUNT * 100)) / 100;
-  const totalAmount = Number(paymentInput) || 0;
-  
-  // --- 👇 CORRECCIÓN DE ERROR 'effectiveBasePrice is not defined' 👇 ---
-  // Esta variable debe ser definida aquí, fuera del handleSubmit
   const effectiveBasePrice = Math.max(basePrice, FALLBACK_MIN_PREMIUM_AMOUNT);
-  // --- 👆 FIN DE LA CORRECCIÓN 👆 ---
+  const totalAmount = Number(paymentInput) || 0;
+
+  // CALCULAMOS LOS CUPOS RESTANTES
+  const limit = escasezData?.dailyMsgLimit || 30;
+  const count = escasezData?.msgCountToday || 0;
+  // Evitamos negativos por si acaso
+  const remaining = Math.max(0, limit - count);
 
   useEffect(() => {
-    // Usamos la variable corregida
     const initialPrice = String(effectiveBasePrice);
     if (!isMounted) {
       setPaymentInput(initialPrice);
       setIsMounted(true);
     }
-  }, [basePrice, isMounted, effectiveBasePrice]); // Añadida 'effectiveBasePrice' a las dependencias
-  
-  const contractSummary = formatContract(creatorContract); 
+  }, [basePrice, isMounted, effectiveBasePrice]); 
 
   const handlePaymentChange = (e) => {
     const value = e.target.value.replace(/[^0-9.]/g, '');
     setPaymentInput(value);
   };
 
-  // --- ESTE CÓDIGO FUNCIONA IGUAL PARA STRIPE QUE PARA MERCADOPAGO ---
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg("");
     
+    if (isFull) {
+        setErrorMsg("Los cupos se han agotado por hoy.");
+        setStatus("error");
+        return;
+    }
+
     if (!content.trim() || content.trim().length < 3) {
-      setErrorMsg("El mensaje debe tener al menos 3 caracteres.");
+      setErrorMsg("Escribe un mensaje válido.");
       setStatus("error");
       return;
     }
     
-    if (fanEmail.trim().length > 0 && !fanEmail.includes('@')) {
-      setErrorMsg("Por favor, introduce un email válido para tu recibo.");
+    // Email es vital para el polling y la recuperación
+    if (!fanEmail.includes('@')) {
+      setErrorMsg("Necesitas un email para recibir tu respuesta.");
       setStatus("error");
       return;
     }
 
-    // Usamos la variable 'effectiveBasePrice' que ya está definida fuera
     if (totalAmount < effectiveBasePrice) {
-        setErrorMsg(`El pago mínimo es $${effectiveBasePrice.toFixed(2)} MXN.`);
+        setErrorMsg(`Mínimo $${effectiveBasePrice} MXN para ser leído.`);
         setStatus("error");
         return;
     }
     
-    if (isFull) {
-        setErrorMsg("El límite diario de mensajes se ha alcanzado.");
-        setStatus("error");
-        return;
-    }
-    
-    setStatus("loading"); // Botón muestra "Procesando..."
+    setStatus("loading"); 
 
     try {
-      // Llama al "Vendedor"
       const res = await fetch(`${API}/public/${publicId}/create-checkout-session`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-          alias, 
+          alias: "Anónimo", 
           content,
           tipAmount: totalAmount,
           fanEmail: fanEmail 
@@ -131,124 +108,111 @@ export default function AnonMessageForm({
       });
 
       const data = await res.json();
-      if (!res.ok) {
-        if (data.code) {
-             throw new Error(data.error);
-        }
-        throw new Error(data.error || "Error al crear la sesión de pago");
-      }
-
-      // Redirige a la URL de pago (sea Stripe o MP)
-      if (data.url) { 
-          window.location.href = data.url;
-      } else {
-          throw new Error("No se recibió el link de pago.");
-      }
+      if (!res.ok) throw new Error(data.error || "Error procesando");
+      if (data.url) window.location.href = data.url;
 
     } catch (err) {
-      setStatus("error");
-      setErrorMsg(err.message);
-      setStatus("idle"); 
+      setErrorMsg(err.message); 
+      setStatus("error");       
     }
   };
   
-  const isDisabled = status === "loading" || !content.trim() || isFull || totalAmount < effectiveBasePrice;
-  const buttonText = `Pagar y Enviar $${(totalAmount || effectiveBasePrice).toFixed(2)}`;
-  const placeholderText = topicPreference 
-      ? `Escribe sobre: "${topicPreference}"` 
-      : "Escribe tu mensaje anónimo...";
+  // Deshabilitamos si está lleno
+  const isDisabled = status === "loading" || !content.trim() || totalAmount < effectiveBasePrice || isFull;
+  
+  let buttonText;
+  if (status === "loading") {
+    buttonText = "Procesando...";
+  } else if (isFull) {
+    buttonText = "Agotado (Vuelve Mañana)";
+  } else {
+    buttonText = `Enviar Prioritario ($${(totalAmount || effectiveBasePrice).toFixed(2)})`;
+  }
+
+  const placeholderText = topicPreference ? `Tema sugerido: "${topicPreference}"...` : "Escribe tu mensaje aquí...";
 
   return (
     <div className={`anon-form-container ${isMounted ? 'mounted' : ''}`}>
       
-      <EscasezCounter data={escasezData} isFull={isFull} />
+      {/* USAMOS EL NUEVO INDICADOR CON DATOS REALES */}
+      {isFull ? (
+        <div style={{
+            background: 'rgba(255, 193, 7, 0.1)', 
+            border: '1px solid #ffc107', 
+            color: '#ffc107', 
+            padding: '15px', 
+            borderRadius: '12px', 
+            textAlign: 'center',
+            marginBottom: '20px',
+            fontWeight: 'bold'
+        }}>
+            ⛔ Cupo diario lleno. Vuelve mañana.
+        </div>
+      ) : (
+        <ActivityIndicator remaining={remaining} />
+      )}
 
       <form onSubmit={handleSubmit} className="form-element-group">
         
-        <input
-            type="text"
-            placeholder="Tu alias (opcional)"
-            value={alias}
-            onChange={(e) => setAlias(e.target.value)}
-            className="form-input-field"
-          />
-        
-        <input
-            type="email"
-            placeholder="Tu email (opcional, para recibo)"
-            value={fanEmail}
-            onChange={(e) => setFanEmail(e.target.value)}
-            className="form-input-field"
-          />
-
         <textarea
             placeholder={placeholderText}
             value={content}
-            onChange={(e) => {
-              setContent(e.target.value);
-              setCharCount(e.target.value.length);
-            }}
+            onChange={(e) => { setContent(e.target.value); setCharCount(e.target.value.length); }}
             className="form-input-field"
             rows="4"
             maxLength="500"
+            style={{fontSize: '16px', padding: '15px'}}
+            disabled={isFull}
         ></textarea>
-          
         <div className="char-counter">{charCount} / 500</div>
-
-        <div className="contract-summary-box" style={{ 
-            padding: '15px', background: 'rgba(255, 255, 255, 0.05)', 
-            borderRadius: '12px', border: '1px solid var(--border-color-faint)', 
-            marginBottom: '20px', textAlign: 'center'
-        }}>
-          <h4 style={{ 
-              fontSize: '14px', margin: '0 0 8px', 
-              color: 'var(--text-secondary)', fontWeight: '600'
-          }}>
-              Garantía del Creador (MVP):
-          </h4>
-          <p style={{ 
-              margin: 0, fontSize: '15px', 
-              color: 'var(--glow-accent-crimson)', fontWeight: 'bold' 
-          }}>
-              {contractSummary} 
-          </p>
+        
+        {/* INPUT DE EMAIL */}
+        <div style={{marginBottom: '15px'}}>
+            <input
+                type="email"
+                placeholder="Tu email (Para avisarte cuando responda)"
+                value={fanEmail}
+                onChange={(e) => setFanEmail(e.target.value)}
+                className="form-input-field"
+                style={{fontSize: '14px'}}
+                disabled={isFull}
+            />
         </div>
 
-        <div className="payment-section" style={{
-            borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-            paddingTop: '15px', marginTop: '0px'     
-        }}>
-            <label htmlFor="payment" className="payment-label">
-              Monto por Respuesta Premium (Mínimo ${basePrice.toFixed(2)} MXN)
-            </label>
+        <div className="payment-section" style={{ borderTop: '1px solid rgba(255, 255, 255, 0.1)', paddingTop: '15px' }}>
+            <label className="payment-label">Tu Oferta (MXN)</label>
             <div className="payment-input-group">
               <span className="currency-symbol">$</span>
               <input
                   type="text"
                   inputMode="decimal" 
-                  id="payment"
                   value={paymentInput}
                   onChange={handlePaymentChange}
                   placeholder={String(basePrice)}
                   className="payment-input" 
                   style={{ color: totalAmount < basePrice ? '#ff7b7b' : 'var(--text-primary)' }}
+                  disabled={isFull}
               />
-              <span className="currency-symbol">MXN</span>
             </div>
-            <p className="payment-priority-text">
-              Puedes ofrecer más para priorizar tu mensaje.
-            </p>
+            <p className="payment-priority-text">Ofertas más altas se responden primero.</p>
         </div>
 
-        <button type="submit" disabled={isDisabled} className="submit-button" style={{marginTop: '20px'}}>
-          {status === "loading" ? "Redirigiendo a pago..." : buttonText}
+        <button 
+            type="submit" 
+            disabled={isDisabled} 
+            className="submit-button" 
+            style={{
+                marginTop: '15px',
+                background: isFull ? '#3a3a4a' : 'linear-gradient(90deg, #8e2de2, #4a00e0)',
+                cursor: isFull ? 'not-allowed' : 'pointer'
+            }}
+        >
+          {buttonText}
         </button>
       </form>
 
       {status === "error" && (
-        <div className="form-status-message error">
-          <p>{errorMsg || "Hubo un error al procesar tu solicitud."}</p>
-        </div>
+        <div className="form-status-message error"><p>{errorMsg}</p></div>
       )}
     </div>
   );
