@@ -2,7 +2,7 @@
 "use client";
 import { useState } from "react";
 
-const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
+const API = process.env.NEXT_PUBLIC_API || "https://api.ghostmsg.space";
 
 // --- COMPONENTE DE ACTIVIDAD ---
 const ActivityIndicator = ({ remaining }) => {
