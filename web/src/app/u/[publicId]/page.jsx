@@ -2,32 +2,25 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-// --- 👇 1. AÑADE ESTA LÍNEA DE IMPORTACIÓN 👇 ---
 import AnonMessageForm from "@/components/AnonMessageForm";
 
 const API = process.env.NEXT_PUBLIC_API || "https://ghost-api-production.up.railway.app";
-const FALLBACK_MIN_PREMIUM_AMOUNT = 100; 
-const MAX_PREMIUM_AMOUNT = 100000; // $100,000 MXN
 
-// --- ❌ 2. BORRA TODO DESDE AQUÍ... ❌ ---
-// const formatContract = (contractData) => { ... }
-// const EscasezCounter = ({ data, isFull }) => { ... }
-// function AnonMessageForm({ ... }) { ... } 
-// ... (BORRA TODAS ESAS FUNCIONES, HASTA LA LÍNEA 278)
-// --- ❌ ...HASTA AQUÍ ❌ ---
+// Asegúrate de que estas constantes estén definidas
+const FALLBACK_MIN_PREMIUM_AMOUNT = 20; 
+const MAX_PREMIUM_AMOUNT = 100000;
 
-
-// --- 3. COMPONENTE DE PÁGINA (ESTO SE QUEDA) ---
 export default function PublicUserPage() {
   const params = useParams();
   const router = useRouter();
-  const { publicId } = params;
+  // Manejo seguro de params.publicId
+  const publicId = params?.publicId;
 
   const [creatorInfo, setCreatorInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Carga los datos del creador (contrato, precio, etc.) desde la API
+  // Carga los datos del creador
   useEffect(() => {
     if (publicId) {
       const fetchData = async () => {
@@ -49,7 +42,7 @@ export default function PublicUserPage() {
     }
   }, [publicId]);
 
-  // Define qué hacer cuando el chat se cree (redirigir)
+  // Redirección al crear chat
   const handleChatCreated = (newChatEntry) => {
     if (newChatEntry.anonToken && newChatEntry.chatId) {
       router.push(`/chats/${newChatEntry.anonToken}/${newChatEntry.chatId}`);
@@ -80,7 +73,7 @@ export default function PublicUserPage() {
     );
   }
 
-  // Renderiza el formulario, pasando los datos cargados como props
+  // Renderizado Principal
   return (
     <div style={{ maxWidth: '520px', margin: '40px auto', padding: '0 20px' }}>
       <h1 style={{
@@ -95,18 +88,16 @@ export default function PublicUserPage() {
         }}>
         Enviar a {creatorInfo.creatorName}
       </h1>
-        {/* AHORA ESTA LLAMADA USA EL COMPONENTE IMPORTADO Y CORRECTO */}
-        <AnonMessageForm
+      
+      <AnonMessageForm
         publicId={publicId}
         onChatCreated={handleChatCreated}
         escasezData={creatorInfo.escasezData}
         isFull={creatorInfo.isFull}
-        // ❌ ELIMINADO: creatorContract
         topicPreference={creatorInfo.topicPreference} 
         creatorName={creatorInfo.creatorName}
         baseTipAmountCents={creatorInfo.baseTipAmountCents}
       />
-
     </div>
   );
 }
