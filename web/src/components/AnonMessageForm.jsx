@@ -5,7 +5,9 @@ import { useState } from "react";
 const API = process.env.NEXT_PUBLIC_API || "https://api.ghostmsg.space";
 
 export default function AnonMessageForm({
-  publicId
+  publicId,
+  onChatCreated,
+  creatorName
 }) {
   const [content, setContent] = useState("");
   const [status, setStatus] = useState("idle");
@@ -37,9 +39,31 @@ export default function AnonMessageForm({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error al enviar el mensaje");
 
-      setStatus("success");
+      // Guardar en localStorage para que el usuario anónimo tenga el historial
+      try {
+        const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
+        if (!stored.find(c => c.chatId === data.chatId)) {
+          const newChat = {
+            chatId: data.chatId,
+            anonToken: data.anonToken,
+            creatorName: creatorName || "Creador",
+            hasNewReply: false,
+            timestamp: new Date().toISOString()
+          };
+          localStorage.setItem("myChats", JSON.stringify([newChat, ...stored]));
+        }
+      } catch (e) {
+        console.error("Error guardando chat en myChats:", e);
+      }
+
       setContent("");
       setCharCount(0);
+
+      if (onChatCreated) {
+        onChatCreated(data);
+      } else {
+        setStatus("success");
+      }
 
     } catch (err) {
       setErrorMsg(err.message);
