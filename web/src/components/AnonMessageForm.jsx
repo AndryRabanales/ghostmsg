@@ -39,19 +39,17 @@ export default function AnonMessageForm({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error al enviar el mensaje");
 
-      // Guardar en localStorage para que el usuario anónimo tenga el historial
+      // Guardar en localStorage (Solo 1 chat activo a la vez para mantener el anonimato total)
       try {
-        const stored = JSON.parse(localStorage.getItem("myChats") || "[]");
-        if (!stored.find(c => c.chatId === data.chatId)) {
-          const newChat = {
-            chatId: data.chatId,
-            anonToken: data.anonToken,
-            creatorName: creatorName || "Creador",
-            hasNewReply: false,
-            timestamp: new Date().toISOString()
-          };
-          localStorage.setItem("myChats", JSON.stringify([newChat, ...stored]));
-        }
+        const newChat = {
+          chatId: data.chatId,
+          anonToken: data.anonToken,
+          creatorName: creatorName || "Creador",
+          hasNewReply: false,
+          timestamp: new Date().toISOString()
+        };
+        // Sobreescribe todo, eliminando cualquier chat/historial viejo que pudiera existir.
+        localStorage.setItem("myChats", JSON.stringify([newChat]));
       } catch (e) {
         console.error("Error guardando chat en myChats:", e);
       }
