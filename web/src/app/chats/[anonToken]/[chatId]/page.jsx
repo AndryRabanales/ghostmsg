@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { timeAgo } from "@/utils/timeAgo";
+import AnonChatReplyForm from "@/components/AnonChatReplyForm";
 
 const API = process.env.NEXT_PUBLIC_API || "https://api.ghostmsg.space";
 
@@ -70,8 +71,10 @@ export default function PublicChatPage() {
   useEffect(() => {
     const fetchMessages = async () => {
       try {
-        setError(null);
         const res = await fetch(`${API}/chats/${anonToken}/${chatId}`);
+        if (res.status === 404) {
+          throw new Error("CHAT_EXPIRED");
+        }
         if (!res.ok) throw new Error("No se pudo cargar el chat");
 
         const data = await res.json();
@@ -96,7 +99,11 @@ export default function PublicChatPage() {
         }
       } catch (err) {
         console.error(err);
-        setError("⚠️ Error cargando mensajes");
+        if (err.message === "CHAT_EXPIRED") {
+          setError("Este chat se ha eliminado permanentemente tras 1 hora de su creación por motivos de seguridad.");
+        } else {
+          setError("⚠️ Error cargando mensajes");
+        }
         setMessages([]);
       } finally {
         setLoading(false);
@@ -117,18 +124,19 @@ export default function PublicChatPage() {
       try {
         const msg = JSON.parse(event.data);
 
-        if (msg.type === "message" && msg.from === "creator") {
+        if (msg.type === "message") {
           setMessages((prev) => {
             if (prev.some(m => m.id === msg.id)) return prev;
             return [...prev, msg];
           });
 
-          updateLocalStorage((c) => ({ ...c, hasNewReply: true }));
-
-          if (document.visibilityState === 'visible') {
-            markChatAsRead();
+          if (msg.from === "creator") {
+            updateLocalStorage((c) => ({ ...c, hasNewReply: true }));
+            if (document.visibilityState === 'visible') {
+              markChatAsRead();
+            }
+            setCreatorStatus({ status: 'online', lastActiveAt: new Date().toISOString() });
           }
-          setCreatorStatus({ status: 'online', lastActiveAt: new Date().toISOString() });
         }
 
         if (msg.type === 'CREATOR_STATUS_UPDATE') {
@@ -166,12 +174,10 @@ export default function PublicChatPage() {
     const senderName = isCreator ? creatorName : (anonAlias || "Tú");
 
     return (
-      <div className={`message-bubble-wrapper ${isCreator ? 'anon' : 'creator'}`}>
-        <div>
-          <div className="message-alias">{senderName}</div>
-          <div className={`message-bubble ${isCreator ? 'anon' : 'creator'}`}>
-            {msg.content}
-          </div>
+      <div className={`premium-message-wrapper ${isCreator ? 'received' : 'sent'}`}>
+        <div className="premium-message-sender">{senderName}</div>
+        <div className="premium-message-bubble">
+          {msg.content}
         </div>
       </div>
     );
@@ -195,99 +201,54 @@ export default function PublicChatPage() {
   const isWaitingForReply = !lastMessage || lastMessage.from === 'anon';
 
   return (
-    <div className="public-chat-view" style={{ maxWidth: 600, margin: "40px auto", padding: 20, height: 'auto', maxHeight: 'none' }}>
+    <div className="premium-chat-layout">
+      <div className="premium-chat-container">
 
-      <div className="chat-view-header">
-        <div className="chat-header-info">
-          <h3>Chat con {creatorName}</h3>
-          <div className="chat-header-status">
-            {creatorStatus.status === 'online' ? (
-              <span className="status-online">En línea</span>
-            ) : lastActiveDisplay ? (
-              <span className="status-offline">Activo {lastActiveDisplay}</span>
-            ) : (
-              <span className="status-offline" style={{ opacity: 0.6 }}>...</span>
-            )}
-          </div>
-        </div>
-        <a href="/chats" className="back-button" style={{ textDecoration: 'none' }}>← Mis Chats</a>
-      </div>
-
-      {/* EL BLOQUE DE SEGURIDAD YA NO ESTÁ AQUÍ ARRIBA */}
-
-      <div className="messages-display">
-        {error && <p style={{ color: "red", textAlign: 'center' }}>{error}</p>}
-        {messages.length === 0 && !loading && (
-          <div style={{ color: "#666", textAlign: "center", padding: '20px' }}>
-            Aún no hay mensajes.
-          </div>
-        )}
-        {messages.map((m) => (
-          <Message key={m.id || Math.random()} msg={m} creatorName={creatorName} />
-        ))}
-        <div ref={bottomRef} />
-      </div>
-
-      <div className="chat-footer" style={{ paddingTop: '15px', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
-        {isWaitingForReply ? (
-          <div className="waiting-indicator">
-            <span>Esperando respuesta de {creatorName}</span>
-            <div className="waiting-dots">
-              <span>.</span><span>.</span><span>.</span>
+        <div className="premium-chat-header">
+          <div>
+            <h3>{creatorName}</h3>
+            <div className="premium-chat-header-status">
+              {creatorStatus.status === 'online' ? (
+                <>
+                  <div className="premium-status-dot"></div>
+                  <span style={{ color: '#10b981' }}>En línea</span>
+                </>
+              ) : lastActiveDisplay ? (
+                <span style={{ color: 'var(--chat-text-muted)' }}>Activo {lastActiveDisplay}</span>
+              ) : (
+                <span style={{ color: 'var(--chat-text-muted)' }}>...</span>
+              )}
             </div>
           </div>
-        ) : (
-          <div className="waiting-indicator" style={{ animation: 'none', opacity: 0.7, color: 'var(--success-solid)' }}>
-            <span>¡Respuesta recibida! El chat ha finalizado.</span>
-          </div>
-        )}
-
-        {/* --- 👇 AHORA EL BLOQUE ESTÁ AQUÍ ABAJO 👇 --- */}
-        <div style={{
-          background: 'rgba(255, 193, 7, 0.1)',
-          border: '1px solid rgba(255, 193, 7, 0.3)',
-          borderRadius: '12px',
-          padding: '12px',
-          marginTop: '20px', // Añadido margen superior para separar del "Esperando..."
-          marginBottom: '10px',
-          fontSize: '13px',
-          color: '#ffeeba',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '15px',
-          animation: 'fadeInUp 0.5s ease forwards'
-        }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <strong style={{ color: '#ffc107' }}>⚠ Importante:</strong>
-            <span style={{ opacity: 0.9 }}>
-              Esta página fue enviada a tu email. Guarda este enlace, podrías perder el chat.
-            </span>
-          </div>
-
-          <button
-            onClick={copyPageUrl}
-            style={{
-              background: linkCopied ? 'rgba(40, 167, 69, 0.2)' : 'rgba(255, 193, 7, 0.15)',
-              border: `1px solid ${linkCopied ? '#28a745' : 'rgba(255, 193, 7, 0.5)'}`,
-              color: linkCopied ? '#75b798' : '#ffc107',
-              padding: '8px 14px',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '12px',
-              fontWeight: 'bold',
-              whiteSpace: 'nowrap',
-              transition: 'all 0.2s ease',
-              minWidth: '90px',
-              textAlign: 'center'
-            }}
-          >
-            {linkCopied ? "¡Copiado!" : "Copiar Link"}
-          </button>
+          <a href="/chats" style={{ color: 'var(--chat-text-muted)', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
+            Volver
+          </a>
         </div>
-        {/* --- 👆 FIN DEL BLOQUE DE SEGURIDAD 👆 --- */}
-      </div>
 
+        <div className="premium-chat-messages">
+          {error && <p style={{ color: "#ef4444", textAlign: 'center', background: 'rgba(239, 68, 68, 0.1)', padding: '10px', borderRadius: '8px' }}>{error}</p>}
+          {messages.length === 0 && !loading && (
+            <div style={{ color: "var(--chat-text-muted)", textAlign: "center", padding: '40px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+              <span>Envía tu primer mensaje para iniciar el chat animado.</span>
+            </div>
+          )}
+          {messages.map((m) => (
+            <Message key={m.id || Math.random()} msg={m} creatorName={creatorName} />
+          ))}
+          <div ref={bottomRef} />
+        </div>
+
+        <div className="premium-chat-footer">
+          <AnonChatReplyForm
+            anonToken={anonToken}
+            chatId={chatId}
+            onMessageSent={(newMsg) => setMessages(prev => [...prev, newMsg])}
+          />
+        </div>
+
+      </div>
     </div>
   );
 }

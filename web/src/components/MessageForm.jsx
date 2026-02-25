@@ -96,23 +96,32 @@ export default function MessageForm({
 
   return (
     <>
-      <form onSubmit={handleSend} className="chat-reply-form">
-        <input
-          type="text"
-          value={newMsg}
-          onChange={(e) => setNewMsg(e.target.value)}
-          placeholder="Escribe una respuesta..."
-          className="form-input-field reply-input"
-          disabled={loading}
-        />
-        <button
-          type="submit"
-          className="submit-button reply-button"
-          disabled={isDisabled || !newMsg.trim()}
-        >
-          {loading ? "..." : "Enviar"}
-        </button>
-      </form>
+      <div className="premium-reply-form">
+        <form onSubmit={handleSend} style={{ display: 'flex', gap: '12px', width: '100%' }}>
+          <input
+            type="text"
+            value={newMsg}
+            onChange={(e) => setNewMsg(e.target.value)}
+            placeholder="Escribe una respuesta..."
+            className="premium-input"
+            disabled={loading}
+          />
+          <button
+            type="submit"
+            className="premium-send-btn"
+            disabled={isDisabled || !newMsg.trim()}
+          >
+            {loading ? (
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>
+            ) : (
+              <>
+                <span>Enviar</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" /></svg>
+              </>
+            )}
+          </button>
+        </form>
+      </div>
 
       {/* --- (El resto del componente de error y guía no cambia) --- */}
       {error && (
@@ -128,21 +137,6 @@ export default function MessageForm({
           border: '1px solid #ff7b7b'
         }}>
           {error}
-        </div>
-      )}
-
-      {lastAnonQuestion && !error && (
-        <div style={{
-          fontSize: '12px',
-          color: 'var(--text-secondary)',
-          marginTop: '10px',
-          padding: '8px',
-          background: 'rgba(255, 255, 255, 0.05)',
-          borderRadius: '8px',
-          border: '1px solid var(--border-color-faint)',
-          fontStyle: 'italic'
-        }}>
-          Respondiendo a: "{lastAnonQuestion.length > 80 ? lastAnonQuestion.substring(0, 80) + '...' : lastAnonQuestion}"
         </div>
       )}
 
