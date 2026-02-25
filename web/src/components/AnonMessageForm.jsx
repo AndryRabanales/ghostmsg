@@ -115,7 +115,30 @@ export default function AnonMessageForm({
             maxLength="500"
             style={{ fontSize: '16px', padding: '15px' }}
           ></textarea>
-          <div className="char-counter">{charCount} / 500</div>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            marginTop: '8px',
+            marginBottom: '10px'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              color: '#ef4444',
+              fontSize: '0.85rem',
+              fontWeight: '500',
+              background: 'rgba(239, 68, 68, 0.1)',
+              padding: '6px 10px',
+              borderRadius: '6px',
+              maxWidth: '75%'
+            }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+              <span>El chat y los mensajes se <b>autodestruirán 1 hora</b> después de ser enviados.</span>
+            </div>
+            <div className="char-counter">{charCount} / 500</div>
+          </div>
 
           <button
             type="submit"
