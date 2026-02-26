@@ -32,14 +32,13 @@ const CountdownTimer = ({ expiresAt, onExpire }) => {
       const now = new Date();
       const diff = new Date(expiresAt) - now;
       if (diff <= 0) {
-        setTimeLeft("00:00:00");
+        setTimeLeft("00:00");
         clearInterval(interval);
         if (onExpire) onExpire();
       } else {
-        const hours = Math.floor(diff / 3600000).toString().padStart(2, '0');
-        const minutes = Math.floor((diff % 3600000) / 60000).toString().padStart(2, '0');
+        const totalMinutes = Math.floor(diff / 60000).toString().padStart(2, '0');
         const seconds = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
-        setTimeLeft(`${hours}:${minutes}:${seconds}`);
+        setTimeLeft(`${totalMinutes}:${seconds}`);
       }
     }, 1000);
     return () => clearInterval(interval);
