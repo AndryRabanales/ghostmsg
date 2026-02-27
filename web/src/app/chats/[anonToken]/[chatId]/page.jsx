@@ -238,13 +238,19 @@ export default function PublicChatPage() {
       <div className={`premium-message-wrapper ${isCreator ? 'received' : 'sent'}`}>
         <div className="premium-message-sender">{senderName}</div>
         <div className="premium-message-bubble">
-          {msg.imageUrl && (
+          {msg.mediaType === 'video' && msg.imageUrl ? (
+            <video
+              src={msg.imageUrl}
+              controls
+              style={{ maxWidth: '100%', borderRadius: '8px', marginBottom: '8px', display: 'block', maxHeight: '300px' }}
+            />
+          ) : msg.imageUrl ? (
             <img
               src={msg.imageUrl}
               alt="Adjunto"
               style={{ maxWidth: '100%', borderRadius: '8px', marginBottom: '8px', display: 'block' }}
             />
-          )}
+          ) : null}
           {msg.content}
         </div>
       </div>

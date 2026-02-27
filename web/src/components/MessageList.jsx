@@ -59,7 +59,11 @@ const ChatItem = ({ chat, onOpenChat, isOnline }) => {
         <div className="chat-item-content">
           {preview ? (
             <>
-              {preview.imageUrl && <span style={{ marginRight: '5px', color: '#00ff80' }}>📷 Foto</span>}
+              {preview.imageUrl && (
+                <span style={{ marginRight: '5px', color: '#00ff80' }}>
+                  {preview.mediaType === 'video' ? '🎥 Video' : '📷 Foto'}
+                </span>
+              )}
               {preview.content}
             </>
           ) : "Chat iniciado, sin mensajes"}
