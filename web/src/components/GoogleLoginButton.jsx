@@ -31,10 +31,12 @@ export default function GoogleLoginButton({ onSuccess, onError }) {
       callback: handleCredential,
     });
     window.google.accounts.id.renderButton(buttonRef.current, {
-      theme: "outline",
+      theme: "filled_black",
+      shape: "pill",
       size: "large",
-      width: 280,
+      width: 290,
       text: "continue_with",
+      logo_alignment: "left",
     });
   };
 
@@ -45,13 +47,16 @@ export default function GoogleLoginButton({ onSuccess, onError }) {
   if (!GOOGLE_CLIENT_ID) return null;
 
   return (
-    <div className="google-login-wrapper">
-      <Script
-        src="https://accounts.google.com/gsi/client"
-        strategy="afterInteractive"
-        onLoad={renderButton}
-      />
-      <div ref={buttonRef} />
+    <div className="google-login-frame">
+      <span className="google-login-label">Continúa con</span>
+      <div className="google-login-wrapper">
+        <Script
+          src="https://accounts.google.com/gsi/client"
+          strategy="afterInteractive"
+          onLoad={renderButton}
+        />
+        <div ref={buttonRef} />
+      </div>
     </div>
   );
 }
