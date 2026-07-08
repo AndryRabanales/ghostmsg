@@ -9,6 +9,7 @@ const API = process.env.NEXT_PUBLIC_API || "https://api.ghostmsg.space";
 
 const CountdownTimer = ({ expiresAt, onExpire }) => {
   const [timeLeft, setTimeLeft] = useState("");
+  const [isCritical, setIsCritical] = useState(false);
 
   useEffect(() => {
     if (!expiresAt) return;
@@ -23,6 +24,7 @@ const CountdownTimer = ({ expiresAt, onExpire }) => {
         const totalMinutes = Math.floor(diff / 60000).toString().padStart(2, '0');
         const seconds = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
         setTimeLeft(`${totalMinutes}:${seconds}`);
+        setIsCritical(diff < 5 * 60000);
       }
     }, 1000);
     return () => clearInterval(interval);
@@ -31,8 +33,8 @@ const CountdownTimer = ({ expiresAt, onExpire }) => {
   if (!timeLeft) return null;
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#f87171', fontWeight: 600, fontSize: '0.95rem' }}>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+    <div className={`premium-timer-pill ${isCritical ? 'is-critical' : ''}`}>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
       {timeLeft}
     </div>
   );
@@ -233,6 +235,9 @@ export default function PublicChatPage() {
   const Message = ({ msg, creatorName }) => {
     const isCreator = msg.from === "creator";
     const senderName = isCreator ? creatorName : (anonAlias || "Tú");
+    const time = msg.createdAt
+      ? new Date(msg.createdAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+      : null;
 
     return (
       <div className={`premium-message-wrapper ${isCreator ? 'received' : 'sent'}`}>
@@ -253,6 +258,7 @@ export default function PublicChatPage() {
           ) : null}
           {msg.content}
         </div>
+        {time && <div className="premium-message-time">{time}</div>}
       </div>
     );
   };
@@ -279,24 +285,26 @@ export default function PublicChatPage() {
       <div className="premium-chat-container">
 
         <div className="premium-chat-header">
-          <div>
-            <h3>{creatorName}</h3>
-            <div className="premium-chat-header-status">
-              {creatorStatus.status === 'online' ? (
-                <>
-                  <div className="premium-status-dot"></div>
+          <div className="premium-chat-header-identity">
+            <div className={`premium-chat-avatar ${creatorStatus.status === 'online' ? 'is-online' : ''}`}>
+              {(creatorName || "?").trim().charAt(0).toUpperCase()}
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <h3>{creatorName}</h3>
+              <div className="premium-chat-header-status">
+                {creatorStatus.status === 'online' ? (
                   <span style={{ color: '#10b981' }}>En línea</span>
-                </>
-              ) : lastActiveDisplay ? (
-                <span style={{ color: 'var(--chat-text-muted)' }}>Activo {lastActiveDisplay}</span>
-              ) : (
-                <span style={{ color: 'var(--chat-text-muted)' }}>...</span>
-              )}
+                ) : lastActiveDisplay ? (
+                  <span style={{ color: 'var(--chat-text-muted)' }}>Activo {lastActiveDisplay}</span>
+                ) : (
+                  <span style={{ color: 'var(--chat-text-muted)' }}>...</span>
+                )}
+              </div>
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div className="premium-chat-header-actions">
             <CountdownTimer expiresAt={expiresAt} onExpire={handleExpire} />
-            <button onClick={handleAbandon} style={{ background: 'transparent', border: '1px solid #ef4444', color: '#ef4444', borderRadius: '8px', padding: '6px 12px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <button onClick={handleAbandon} className="premium-abandon-btn">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
               Abandonar
             </button>

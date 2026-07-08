@@ -94,22 +94,40 @@ export default function MessageForm({
 
   const isDisabled = loading || !newMsg.trim();
 
+  const handleRipple = (e) => {
+    const btn = e.currentTarget;
+    if (btn.disabled) return;
+    const rect = btn.getBoundingClientRect();
+    const ripple = document.createElement('span');
+    const size = Math.max(rect.width, rect.height) * 1.6;
+    ripple.className = 'ripple';
+    ripple.style.width = ripple.style.height = `${size}px`;
+    ripple.style.left = `${e.clientX - rect.left - size / 2}px`;
+    ripple.style.top = `${e.clientY - rect.top - size / 2}px`;
+    btn.appendChild(ripple);
+    ripple.addEventListener('animationend', () => ripple.remove());
+  };
+
   return (
     <>
       <div className="premium-reply-form">
         <form onSubmit={handleSend} style={{ display: 'flex', gap: '12px', width: '100%' }}>
-          <input
-            type="text"
-            value={newMsg}
-            onChange={(e) => setNewMsg(e.target.value)}
-            placeholder="Escribe una respuesta..."
-            className="premium-input"
-            disabled={loading}
-          />
+          <div className="premium-input-wrap">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+            <input
+              type="text"
+              value={newMsg}
+              onChange={(e) => setNewMsg(e.target.value)}
+              placeholder="Escribe una respuesta..."
+              className="premium-input"
+              disabled={loading}
+            />
+          </div>
           <button
             type="submit"
             className="premium-send-btn"
             disabled={isDisabled || !newMsg.trim()}
+            onMouseDown={handleRipple}
           >
             {loading ? (
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>

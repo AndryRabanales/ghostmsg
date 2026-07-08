@@ -11,6 +11,9 @@ const API = process.env.NEXT_PUBLIC_API || "https://api.ghostmsg.space";
 const Message = ({ msg, creatorName, anonAlias }) => {
   const isCreator = msg.from === "creator";
   const senderName = isCreator ? creatorName : (msg.alias || anonAlias);
+  const time = msg.createdAt
+    ? new Date(msg.createdAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+    : null;
 
   return (
     <div className={`premium-message-wrapper ${isCreator ? 'sent' : 'received'}`}>
@@ -31,6 +34,7 @@ const Message = ({ msg, creatorName, anonAlias }) => {
         ) : null}
         {msg.content}
       </div>
+      {time && <div className="premium-message-time">{time}</div>}
     </div>
   );
 };
@@ -38,6 +42,7 @@ const Message = ({ msg, creatorName, anonAlias }) => {
 // --- Componente CountdownTimer (Idéntico al de page.jsx) ---
 const CountdownTimer = ({ expiresAt, onExpire }) => {
   const [timeLeft, setTimeLeft] = useState("");
+  const [isCritical, setIsCritical] = useState(false);
 
   useEffect(() => {
     if (!expiresAt) return;
@@ -52,6 +57,7 @@ const CountdownTimer = ({ expiresAt, onExpire }) => {
         const totalMinutes = Math.floor(diff / 60000).toString().padStart(2, '0');
         const seconds = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
         setTimeLeft(`${totalMinutes}:${seconds}`);
+        setIsCritical(diff < 5 * 60000);
       }
     }, 1000);
     return () => clearInterval(interval);
@@ -60,8 +66,8 @@ const CountdownTimer = ({ expiresAt, onExpire }) => {
   if (!timeLeft) return null;
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#f87171', fontWeight: 600, fontSize: '0.95rem' }}>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+    <div className={`premium-timer-pill ${isCritical ? 'is-critical' : ''}`}>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
       {timeLeft}
     </div>
   );
@@ -196,14 +202,17 @@ export default function ChatDetail({ dashboardId, chatId, onBack }) {
       <div className="premium-chat-container">
 
         <div className="premium-chat-header">
-          <div>
+          <div className="premium-chat-header-identity">
+            <div className="premium-chat-avatar">
+              {(anonAlias || "?").trim().charAt(0).toUpperCase()}
+            </div>
             <h3>{anonAlias}</h3>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div className="premium-chat-header-actions">
             {chatInfo?.expiresAt && (
               <CountdownTimer expiresAt={chatInfo.expiresAt} onExpire={handleExpire} />
             )}
-            <button onClick={onBack} style={{ background: 'transparent', border: 'none', color: 'var(--chat-text-muted)', fontSize: '0.9rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', fontFamily: 'inherit' }}>
+            <button onClick={onBack} className="premium-back-btn">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
               Volver
             </button>
