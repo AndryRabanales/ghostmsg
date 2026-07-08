@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { refreshToken, getAuthHeaders } from "@/utils/auth";
 import MessageList from "@/components/MessageList";
 import DashboardInfo from "@/components/DashboardInfo";
+import EditProfile from "@/components/EditProfile";
 import ShareLinkGuideModal from "@/components/ShareLinkGuideModal";
 
 
@@ -111,6 +112,13 @@ export default function DashboardPage() {
                     <div>
                         <div className="fade-in-up" style={{ animationDelay: '0.1s' }}>
                             <DashboardInfo creator={creator} onChange={setCreator} />
+                        </div>
+
+                        <div className="fade-in-up" style={{ animationDelay: '0.2s' }}>
+                            <EditProfile
+                                creator={creator}
+                                onSaved={(updated) => setCreator((prev) => ({ ...prev, ...updated }))}
+                            />
                         </div>
 
                         <div className="fade-in-up" style={{ animationDelay: '0.3s' }}>

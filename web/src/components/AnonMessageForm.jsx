@@ -10,8 +10,12 @@ const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 export default function AnonMessageForm({
   publicId,
   onChatCreated,
-  creatorName
+  creatorName,
+  aliasPrompt,
+  messagePrompt
 }) {
+  const aliasPlaceholder = aliasPrompt || "Ej. Fan secreto, Vecino curioso...";
+  const messagePlaceholder = messagePrompt || "Dime qué piensas de mí...";
   const [content, setContent] = useState("");
   const [alias, setAlias] = useState("");
   const [status, setStatus] = useState("idle");
@@ -224,7 +228,7 @@ export default function AnonMessageForm({
               <span className="input-icon">👤</span>
               <input
                 type="text"
-                placeholder="Ej. Fan secreto, Vecino curioso..."
+                placeholder={aliasPlaceholder}
                 value={alias}
                 onChange={(e) => setAlias(e.target.value)}
                 className="form-input-field has-icon attention-pulse"
@@ -239,7 +243,7 @@ export default function AnonMessageForm({
               Tu mensaje
             </label>
             <textarea
-              placeholder="Dime qué piensas de mí..."
+              placeholder={messagePlaceholder}
               value={content}
               onChange={(e) => { setContent(e.target.value); setCharCount(e.target.value.length); }}
               className="form-input-field attention-pulse"

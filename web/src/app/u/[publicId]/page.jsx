@@ -84,6 +84,8 @@ export default function PublicUserPage() {
         publicId={publicId}
         onChatCreated={handleChatCreated}
         creatorName={creatorInfo.creatorName}
+        aliasPrompt={creatorInfo.aliasPrompt}
+        messagePrompt={creatorInfo.messagePrompt}
       />
     </div>
   );
