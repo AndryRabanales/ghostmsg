@@ -22,8 +22,8 @@ export default function AnonMessageForm({
     e.preventDefault();
     setErrorMsg("");
 
-    if (!content.trim()) {
-      setErrorMsg("Escribe un mensaje válido.");
+    if (!content.trim() && !imageBase64) {
+      setErrorMsg("Escribe un mensaje o adjunta un archivo.");
       setStatus("error");
       return;
     }
@@ -79,7 +79,7 @@ export default function AnonMessageForm({
     }
   };
 
-  const isDisabled = status === "loading" || !content.trim();
+  const isDisabled = status === "loading" || (!content.trim() && !imageBase64);
 
   let buttonText = status === "loading" ? "Enviando..." : "Enviar Mensaje";
 

@@ -2,6 +2,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import GoogleLoginButton from "@/components/GoogleLoginButton";
 
 const API = process.env.NEXT_PUBLIC_API || "https://api.ghostmsg.space";
 
@@ -71,6 +72,15 @@ export default function LoginPage() {
           </button>
           {error && <p className="auth-error">{error}</p>}
         </form>
+        <div className="auth-divider">o</div>
+        <GoogleLoginButton
+          onSuccess={(data) => {
+            localStorage.setItem("token", data.token);
+            localStorage.setItem("publicId", data.publicId);
+            router.push(`/dashboard/${data.dashboardId}`);
+          }}
+          onError={setError}
+        />
         <p className="auth-footer-link">
           ¿No tienes una cuenta? <a href="/register">Regístrate ahora</a>
         </p>
