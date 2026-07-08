@@ -3891,8 +3891,7 @@ textarea.form-input-field.attention-pulse {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  position: sticky;
-  top: 0;
+  flex-shrink: 0;
   z-index: 10;
   gap: 16px;
 }
@@ -4082,7 +4081,8 @@ textarea.form-input-field.attention-pulse {
 }
 
 .premium-chat-messages {
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
   padding: 24px;
   display: flex;
@@ -4201,8 +4201,7 @@ textarea.form-input-field.attention-pulse {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-top: 1px solid var(--chat-border);
-  position: sticky;
-  bottom: 0;
+  flex-shrink: 0;
   z-index: 1;
 }
 
