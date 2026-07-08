@@ -6,6 +6,7 @@ import { timeAgo } from "@/utils/timeAgo";
 import AnonChatReplyForm from "@/components/AnonChatReplyForm";
 import NotifyMeButton from "@/components/NotifyMeButton";
 import { useViewportHeight } from "@/hooks/useViewportHeight";
+import { formatMessageTime } from "@/utils/formatMessageTime";
 
 const API = process.env.NEXT_PUBLIC_API || "https://api.ghostmsg.space";
 
@@ -238,9 +239,7 @@ export default function PublicChatPage() {
   const Message = ({ msg, creatorName }) => {
     const isCreator = msg.from === "creator";
     const senderName = isCreator ? creatorName : (anonAlias || "Tú");
-    const time = msg.createdAt
-      ? new Date(msg.createdAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
-      : null;
+    const time = formatMessageTime(msg.createdAt);
 
     return (
       <div className={`premium-message-wrapper ${isCreator ? 'received' : 'sent'}`}>

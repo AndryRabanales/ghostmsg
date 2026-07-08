@@ -5,6 +5,7 @@ import { useEffect, useState, useRef } from "react";
 import { refreshToken } from "@/utils/auth";
 import MessageForm from "@/components/MessageForm";
 import { useViewportHeight } from "@/hooks/useViewportHeight";
+import { formatMessageTime } from "@/utils/formatMessageTime";
 
 const API = process.env.NEXT_PUBLIC_API || "https://api.ghostmsg.space";
 
@@ -12,9 +13,7 @@ const API = process.env.NEXT_PUBLIC_API || "https://api.ghostmsg.space";
 const Message = ({ msg, creatorName, anonAlias }) => {
   const isCreator = msg.from === "creator";
   const senderName = isCreator ? creatorName : (msg.alias || anonAlias);
-  const time = msg.createdAt
-    ? new Date(msg.createdAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
-    : null;
+  const time = formatMessageTime(msg.createdAt);
 
   return (
     <div className={`premium-message-wrapper ${isCreator ? 'sent' : 'received'}`}>
@@ -81,10 +80,7 @@ export default function ChatDetail({ dashboardId, chatId, onBack }) {
   useViewportHeight();
   const [messages, setMessages] = useState([]);
   const [chatInfo, setChatInfo] = useState(null);
-
-  // --- 👇 1. ELIMINADO EL ESTADO 'isAnonOnline' 👇 ---
-  // const [isAnonOnline, setIsAnonOnline] = useState(false);
-
+  const [isAnonOnline, setIsAnonOnline] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const bottomRef = useRef(null);
@@ -169,6 +165,11 @@ export default function ChatDetail({ dashboardId, chatId, onBack }) {
           setMessages([]);
         }
 
+        // 3. Estado en línea del anónimo (en tiempo real)
+        if (msg.type === 'ANON_STATUS_UPDATE' && msg.chatId === chatId) {
+          setIsAnonOnline(msg.status === 'online');
+        }
+
       } catch (e) {
         console.error("Error procesando WS:", e);
       }
@@ -205,10 +206,19 @@ export default function ChatDetail({ dashboardId, chatId, onBack }) {
 
         <div className="premium-chat-header">
           <div className="premium-chat-header-identity">
-            <div className="premium-chat-avatar">
+            <div className={`premium-chat-avatar ${isAnonOnline ? 'is-online' : ''}`}>
               {(anonAlias || "?").trim().charAt(0).toUpperCase()}
             </div>
-            <h3>{anonAlias}</h3>
+            <div className="premium-chat-header-nametext">
+              <h3>{anonAlias}</h3>
+              <div className="premium-chat-header-status">
+                {isAnonOnline ? (
+                  <span style={{ color: '#10b981' }}>En línea ahora</span>
+                ) : (
+                  <span style={{ color: 'var(--chat-text-muted)' }}>Desconectado</span>
+                )}
+              </div>
+            </div>
           </div>
           <div className="premium-chat-header-actions">
             {chatInfo?.expiresAt && (

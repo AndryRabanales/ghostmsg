@@ -4147,14 +4147,12 @@ textarea.form-input-field.attention-pulse {
   color: var(--chat-text-muted);
   margin-top: 5px;
   padding: 0 4px;
-  opacity: 0;
-  transform: translateY(-2px);
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  opacity: 0.65;
+  transition: opacity 0.2s ease;
 }
 
 .premium-message-wrapper:hover .premium-message-time {
-  opacity: 0.8;
-  transform: translateY(0);
+  opacity: 1;
 }
 
 .premium-chat-footer {
