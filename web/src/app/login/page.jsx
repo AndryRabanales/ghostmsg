@@ -11,6 +11,7 @@ export default function LoginPage() {
   return (
     <div className="auth-container">
       <main className="auth-card">
+        <div className="auth-mark">👻</div>
         <h1>Iniciar Sesión</h1>
         <p className="auth-subtitle">Entra con tu cuenta de Google para continuar.</p>
         <GoogleLoginButton

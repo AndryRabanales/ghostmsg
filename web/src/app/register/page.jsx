@@ -11,6 +11,7 @@ export default function RegisterPage() {
   return (
     <div className="auth-container">
       <main className="auth-card">
+        <div className="auth-mark">👻</div>
         <h1>Crear Cuenta</h1>
         <p className="auth-subtitle">Regístrate con tu cuenta de Google en un clic.</p>
         <GoogleLoginButton

@@ -11,26 +11,9 @@ export default function HomePage() {
   return (
     <div className="auth-container">
       <main className="auth-card">
-        <h1 style={{
-          fontSize: '34px',
-          fontWeight: '800',
-          letterSpacing: '-2.5px',
-          background: 'linear-gradient(90deg, #8e2de2, #c9a4ff)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          margin: '0 0 15px',
-          textAlign: 'center'
-        }}>
-          Iniciar sesión
-        </h1>
-        <p style={{
-          color: 'rgba(235, 235, 245, 0.6)',
-          fontSize: '18px',
-          margin: '0 auto 30px',
-          lineHeight: '1.7',
-          maxWidth: '350px',
-          textAlign: 'center'
-        }}>
+        <div className="auth-mark">👻</div>
+        <h1>Iniciar sesión</h1>
+        <p className="auth-subtitle">
           Crea tu espacio anónimo, compártelo y descubre lo que otros realmente piensan.
         </p>
 
