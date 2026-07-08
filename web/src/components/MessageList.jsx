@@ -42,39 +42,40 @@ const ChatItem = ({ chat, onOpenChat, isOnline }) => {
     );
   };
 
+  const alias = chat.anonAlias || "Anónimo";
+  const initial = alias.trim().charAt(0).toUpperCase();
+  const dateStr = new Date(preview ? preview.createdAt : chat.createdAt)
+    .toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+
   return (
     <div
       className={`chat-item ${chat.anonReplied ? 'new-reply' : ''} ${!chat.isOpened ? 'unopened' : ''}`}
       onClick={() => onOpenChat(chat.id)}
     >
+      <div className={`chat-item-avatar ${isOnline ? 'is-online' : ''}`}>
+        {initial}
+      </div>
+
       <div className="chat-item-main">
-        <div className="chat-item-alias">
-          {chat.anonAlias || "Anónimo"}
-
-          {/* --- INDICADOR EN LÍNEA --- */}
-          {isOnline && <span className="online-indicator-dot"></span>}
-
-          {chat.anonReplied && <span className="new-reply-indicator">Nuevo mensaje</span>}
+        <div className="chat-item-toprow">
+          <span className="chat-item-alias">{alias}</span>
+          <span className="chat-item-date">{dateStr}</span>
         </div>
         <div className="chat-item-content">
+          {chat.anonReplied && <span className="new-reply-indicator">Nuevo</span>}
           {preview ? (
             <>
               {preview.imageUrl && (
-                <span style={{ marginRight: '5px', color: '#00ff80' }}>
-                  {preview.mediaType === 'video' ? '🎥 Video' : '📷 Foto'}
+                <span className="chat-item-media">
+                  {preview.mediaType === 'video' ? '🎥' : '📷'}
                 </span>
               )}
               {preview.content}
             </>
           ) : "Chat iniciado, sin mensajes"}
         </div>
-        <div className="chat-item-date">
-          {preview
-            ? new Date(preview.createdAt).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
-            : new Date(chat.createdAt).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
-          }
-        </div>
       </div>
+
       <button className="chat-item-button">
         {getButtonContent()}
       </button>
