@@ -4300,6 +4300,54 @@ textarea.form-input-field.attention-pulse {
   transform: none;
 }
 
+.notify-me-wrap {
+  padding: 10px 24px 0;
+  display: flex;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
+}
+
+.notify-me-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: 'Outfit', sans-serif;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  background: rgba(139, 92, 246, 0.12);
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  color: #c4b5fd;
+}
+
+.notify-me-chip:hover:not(:disabled) {
+  background: rgba(139, 92, 246, 0.2);
+  transform: translateY(-1px);
+}
+
+.notify-me-chip:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.notify-me-chip.is-subscribed {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.35);
+  color: #6ee7b7;
+  cursor: default;
+}
+
+.notify-me-error {
+  margin-top: 8px;
+  text-align: center;
+  font-size: 0.75rem;
+  color: #f87171;
+}
+
 /* --- Compactación para móvil --- */
 @media (max-width: 480px) {
   .premium-chat-header {

@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { timeAgo } from "@/utils/timeAgo";
 import AnonChatReplyForm from "@/components/AnonChatReplyForm";
+import NotifyMeButton from "@/components/NotifyMeButton";
 
 const API = process.env.NEXT_PUBLIC_API || "https://api.ghostmsg.space";
 
@@ -310,6 +311,8 @@ export default function PublicChatPage() {
             </button>
           </div>
         </div>
+
+        <NotifyMeButton anonToken={anonToken} chatId={chatId} />
 
         <div className="premium-chat-messages">
           {error && <p style={{ color: "#ef4444", textAlign: 'center', background: 'rgba(239, 68, 68, 0.1)', padding: '10px', borderRadius: '8px' }}>{error}</p>}
