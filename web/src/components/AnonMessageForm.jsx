@@ -215,25 +215,38 @@ export default function AnonMessageForm({
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="form-element-group">
-          <div className="input-icon-wrap">
-            <span className="input-icon">👤</span>
-            <input
-              type="text"
-              placeholder="Tu alias (opcional)"
-              value={alias}
-              onChange={(e) => setAlias(e.target.value)}
-              className="form-input-field has-icon"
-              maxLength="30"
-            />
+          <div className="form-field-group">
+            <label className="form-field-label">
+              <span className="form-field-label-icon">👤</span>
+              Tu alias <span className="form-field-label-optional">(opcional)</span>
+            </label>
+            <div className="input-icon-wrap">
+              <span className="input-icon">👤</span>
+              <input
+                type="text"
+                placeholder="Ej. Fan secreto, Vecino curioso..."
+                value={alias}
+                onChange={(e) => setAlias(e.target.value)}
+                className="form-input-field has-icon attention-pulse"
+                maxLength="30"
+              />
+            </div>
           </div>
-          <textarea
-            placeholder="Dime que piensas de mi"
-            value={content}
-            onChange={(e) => { setContent(e.target.value); setCharCount(e.target.value.length); }}
-            className="form-input-field"
-            rows="4"
-            maxLength="500"
-          ></textarea>
+
+          <div className="form-field-group">
+            <label className="form-field-label">
+              <span className="form-field-label-icon">💬</span>
+              Tu mensaje
+            </label>
+            <textarea
+              placeholder="Dime qué piensas de mí..."
+              value={content}
+              onChange={(e) => { setContent(e.target.value); setCharCount(e.target.value.length); }}
+              className="form-input-field attention-pulse"
+              rows="4"
+              maxLength="500"
+            ></textarea>
+          </div>
 
           {imageBase64 && (
             <div className="media-preview">
