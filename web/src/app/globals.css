@@ -1484,6 +1484,8 @@ body {
 }
 
 .anon-form-container {
+  --spot-x: 50%;
+  --spot-y: 0%;
   background: linear-gradient(180deg, rgba(38, 32, 58, 0.75), rgba(20, 18, 32, 0.75));
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -1493,7 +1495,7 @@ body {
   padding: 32px 28px;
   opacity: 0;
   transform: translateY(24px) scale(0.98);
-  transition: opacity 0.7s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: opacity 0.7s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.4s ease;
   position: relative;
   overflow: hidden;
 }
@@ -1509,6 +1511,31 @@ body {
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   pointer-events: none;
+  z-index: 2;
+}
+
+.anon-form-container::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(320px circle at var(--spot-x) var(--spot-y), rgba(201, 164, 255, 0.14), transparent 70%);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.anon-form-container:hover::after {
+  opacity: 1;
+}
+
+.anon-form-container:hover {
+  box-shadow: 0 24px 70px -10px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 0 0 1px rgba(201, 164, 255, 0.1);
+}
+
+.anon-form-container>* {
+  position: relative;
+  z-index: 1;
 }
 
 .anon-form-container.mounted {
@@ -1602,6 +1629,38 @@ textarea.form-input-field {
   box-shadow: 0 0 0 4px rgba(142, 45, 226, 0.16), 0 0 24px rgba(142, 45, 226, 0.25);
 }
 
+.input-icon-wrap {
+  position: relative;
+  opacity: 0;
+  transform: translateY(10px);
+  animation: fadeInUp 0.6s 0.18s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.input-icon-wrap .form-input-field {
+  opacity: 1;
+  transform: none;
+  animation: none;
+}
+
+.input-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  opacity: 0.45;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.input-icon-wrap:focus-within .input-icon {
+  opacity: 0.9;
+}
+
+.form-input-field.has-icon {
+  padding-left: 42px;
+}
+
 .form-toolbar {
   display: flex;
   justify-content: space-between;
@@ -1650,7 +1709,11 @@ textarea.form-input-field {
 }
 
 .attach-chip:hover svg {
-  transform: scale(1.08);
+  transform: scale(1.12) rotate(-6deg);
+}
+
+.attach-chip:active {
+  transform: scale(0.97);
 }
 
 .attach-remove {
@@ -1690,20 +1753,61 @@ textarea.form-input-field {
   display: block;
 }
 
-.char-counter {
-  text-align: right;
-  font-size: 12px;
-  color: rgba(235, 235, 245, 0.4);
+.char-ring {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.char-ring svg {
+  position: absolute;
+  inset: 0;
+  transform: rotate(-90deg);
+}
+
+.char-ring-track {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 2.5;
+}
+
+.char-ring-fill {
+  fill: none;
+  stroke: rgba(201, 164, 255, 0.4);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.2s ease, stroke 0.25s ease;
+}
+
+.char-ring.is-active .char-ring-fill {
+  stroke: #c9a4ff;
+}
+
+.char-ring.is-near-limit .char-ring-fill {
+  stroke: #ffb020;
+}
+
+.char-ring.is-at-limit .char-ring-fill {
+  stroke: #e74c3c;
+}
+
+.char-ring-label {
+  font-size: 10px;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
+  color: rgba(235, 235, 245, 0.45);
   transition: color 0.25s ease;
 }
 
-.char-counter.is-near-limit {
+.char-ring.is-near-limit .char-ring-label {
   color: #ffb020;
 }
 
-.char-counter.is-at-limit {
+.char-ring.is-at-limit .char-ring-label {
   color: #e74c3c;
 }
 
@@ -1729,6 +1833,16 @@ textarea.form-input-field {
   opacity: 0;
   transform: translateY(10px);
   animation: fadeInUp 0.6s 0.36s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  position: relative;
+  overflow: hidden;
+}
+
+.submit-icon {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.submit-button:hover:not(:disabled) .submit-icon {
+  transform: translate(3px, -3px) rotate(8deg);
 }
 
 .submit-button:hover:not(:disabled) {
@@ -1746,6 +1860,26 @@ textarea.form-input-field {
   color: rgba(235, 235, 245, 0.35);
   cursor: not-allowed;
   box-shadow: none;
+}
+
+.submit-button:disabled .submit-icon {
+  opacity: 0.4;
+}
+
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.35);
+  transform: scale(0);
+  animation: ripple-expand 0.6s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes ripple-expand {
+  to {
+    transform: scale(1);
+    opacity: 0;
+  }
 }
 
 .submit-spinner {

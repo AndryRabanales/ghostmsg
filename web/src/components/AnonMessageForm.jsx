@@ -1,8 +1,11 @@
 // src/components/AnonMessageForm.jsx
 "use client";
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 const API = process.env.NEXT_PUBLIC_API || "https://api.ghostmsg.space";
+const MAX_CHARS = 500;
+const RING_RADIUS = 15;
+const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 
 export default function AnonMessageForm({
   publicId,
@@ -17,6 +20,29 @@ export default function AnonMessageForm({
   const [imageBase64, setImageBase64] = useState(null);
   const [mediaType, setMediaType] = useState(null);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
+  const cardRef = useRef(null);
+
+  const handleSpotlight = (e) => {
+    const card = cardRef.current;
+    if (!card) return;
+    const rect = card.getBoundingClientRect();
+    card.style.setProperty('--spot-x', `${e.clientX - rect.left}px`);
+    card.style.setProperty('--spot-y', `${e.clientY - rect.top}px`);
+  };
+
+  const handleRipple = (e) => {
+    const btn = e.currentTarget;
+    if (btn.disabled) return;
+    const rect = btn.getBoundingClientRect();
+    const ripple = document.createElement('span');
+    const size = Math.max(rect.width, rect.height) * 1.6;
+    ripple.className = 'ripple';
+    ripple.style.width = ripple.style.height = `${size}px`;
+    ripple.style.left = `${e.clientX - rect.left - size / 2}px`;
+    ripple.style.top = `${e.clientY - rect.top - size / 2}px`;
+    btn.appendChild(ripple);
+    ripple.addEventListener('animationend', () => ripple.remove());
+  };
 
   const clearMedia = () => {
     setImageBase64(null);
@@ -144,9 +170,6 @@ export default function AnonMessageForm({
   };
 
   const isDisabled = status === "loading" || (!content.trim() && !imageBase64);
-  const counterClass =
-    charCount >= 500 ? "char-counter is-at-limit" :
-    charCount >= 420 ? "char-counter is-near-limit" : "char-counter";
 
   const attachLabel = isProcessingImage
     ? "Procesando..."
@@ -161,9 +184,14 @@ export default function AnonMessageForm({
   ].filter(Boolean).join(" ");
 
   const initial = (creatorName || "?").trim().charAt(0).toUpperCase();
+  const ringOffset = RING_CIRCUMFERENCE * (1 - Math.min(charCount, MAX_CHARS) / MAX_CHARS);
+  const ringClass =
+    charCount >= MAX_CHARS ? "char-ring is-at-limit" :
+    charCount >= 420 ? "char-ring is-near-limit" :
+    charCount > 0 ? "char-ring is-active" : "char-ring";
 
   return (
-    <div className="anon-form-container mounted">
+    <div className="anon-form-container mounted" ref={cardRef} onMouseMove={handleSpotlight}>
       <div className="anon-form-header">
         <div className="anon-form-avatar">{initial}</div>
         <div className="anon-form-header-text">
@@ -187,14 +215,17 @@ export default function AnonMessageForm({
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="form-element-group">
-          <input
-            type="text"
-            placeholder="Tu alias (opcional)"
-            value={alias}
-            onChange={(e) => setAlias(e.target.value)}
-            className="form-input-field"
-            maxLength="30"
-          />
+          <div className="input-icon-wrap">
+            <span className="input-icon">👤</span>
+            <input
+              type="text"
+              placeholder="Tu alias (opcional)"
+              value={alias}
+              onChange={(e) => setAlias(e.target.value)}
+              className="form-input-field has-icon"
+              maxLength="30"
+            />
+          </div>
           <textarea
             placeholder="Dime que piensas de mi"
             value={content}
@@ -249,12 +280,37 @@ export default function AnonMessageForm({
                 </label>
               )}
             </div>
-            <div className={counterClass}>{charCount} / 500</div>
+            <div className={ringClass} title={`${charCount} / ${MAX_CHARS}`}>
+              <svg width="34" height="34" viewBox="0 0 34 34">
+                <circle className="char-ring-track" cx="17" cy="17" r={RING_RADIUS} />
+                <circle
+                  className="char-ring-fill"
+                  cx="17" cy="17" r={RING_RADIUS}
+                  style={{
+                    strokeDasharray: RING_CIRCUMFERENCE,
+                    strokeDashoffset: ringOffset
+                  }}
+                />
+              </svg>
+              <span className="char-ring-label">{MAX_CHARS - charCount}</span>
+            </div>
           </div>
 
-          <button type="submit" disabled={isDisabled} className="submit-button">
-            {status === "loading" && <span className="submit-spinner" />}
-            {status === "loading" ? "Enviando..." : "Enviar Mensaje"}
+          <button
+            type="submit"
+            disabled={isDisabled}
+            className="submit-button"
+            onMouseDown={handleRipple}
+          >
+            {status === "loading" ? (
+              <span className="submit-spinner" />
+            ) : (
+              <svg className="submit-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13" />
+                <polygon points="22 2 15 22 11 13 2 9 22 2" />
+              </svg>
+            )}
+            <span>{status === "loading" ? "Enviando..." : "Enviar Mensaje"}</span>
           </button>
         </form>
       )}
