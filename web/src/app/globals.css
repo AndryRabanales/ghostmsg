@@ -15,7 +15,6 @@
 /* -------------------------------------------------------------------------- */
 /* SECCIÓN 1: FUENTES Y PALETA DE COLORES "HELLFIRE" */
 /* -------------------------------------------------------------------------- */
-@import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Fira+Code&display=swap");
 
 /* Reemplaza esto en src/app/globals.css */
 
@@ -1166,14 +1165,11 @@ body::after {
 
 /* /src/app/globals.css */
 
-@import "tailwindcss";
-
 /*
 ================================================================================
 |                       TEMA: HELLFIRE CORE v4 (FINAL BUILD)                     |
 ================================================================================
 */
-@import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Fira+Code&display=swap");
 
 :root {
   --background-abyss: #0d0c22;
@@ -3069,7 +3065,6 @@ body {
 |                     SECCIÓN PREMIUM: CHAT SYSTEM (UNIFICADO)                 |
 ================================================================================
 */
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
 
 :root {
   --chat-bg: #0b0f19;
