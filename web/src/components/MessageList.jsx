@@ -206,15 +206,18 @@ export default function MessageList({ dashboardId }) {
 
   return (
     <div>
-      <h2 style={{ fontSize: '28px', color: '#fff', borderBottom: '1px solid var(--border-color-faint)', paddingBottom: '15px', marginBottom: '20px', fontWeight: 'bold' }}>
+      <h2 className="inbox-title">
         Bandeja de Entrada
+        {chats.length > 0 && <span className="inbox-count">{chats.length}</span>}
       </h2>
       {loading && <p style={{ textAlign: 'center' }}>Cargando chats...</p>}
       {error && <p style={{ color: "#FE3C72", textAlign: 'center' }}>{error}</p>}
 
       {!loading && chats.length === 0 && (
         <div className="empty-inbox-container fade-in-up" style={{ animationDelay: '0.5s' }}>
-          <EmptyInboxIcon />
+          <div className="empty-inbox-icon-ring">
+            <EmptyInboxIcon />
+          </div>
           <p className="empty-inbox-title">Tu espacio secreto está silencioso</p>
           <p className="empty-inbox-subtitle">¡Comparte tu link público para que la conversación comience!</p>
         </div>

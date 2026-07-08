@@ -7,7 +7,12 @@ const CopyIcon = () => (
   <svg height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor"><path d="M8 17.929H6c-1.105 0-2-.895-2-2V4c0-1.105.895-2 2-2h11c1.105 0 2 .895 2 2v2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path><path d="M8 7.01V4c0-1.105.895-2 2-2h7c1.105 0 2 .895 2 2v12c0 1.105-.895 2-2 2h-2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path></svg>
 );
 
+const CheckIcon = () => (
+  <svg height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor"><polyline points="20 6 9 17 4 12" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"></polyline></svg>
+);
+
 const LinkInput = ({ label, icon, url, type, onCopy, copyStatus }) => {
+  const isCopied = !!copyStatus[type];
   return (
     <div className="link-input-container">
       <label className="link-input-label">
@@ -22,9 +27,9 @@ const LinkInput = ({ label, icon, url, type, onCopy, copyStatus }) => {
         />
         <button
           onClick={() => onCopy(url, type)}
-          className="copy-button"
+          className={`copy-button ${isCopied ? 'is-copied' : ''}`}
         >
-          <CopyIcon /> {copyStatus[type] || 'Copiar'}
+          {isCopied ? <CheckIcon /> : <CopyIcon />} {copyStatus[type] || 'Copiar'}
         </button>
       </div>
     </div>

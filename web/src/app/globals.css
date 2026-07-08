@@ -481,17 +481,18 @@ body::after {
 /* RE-DISEÑO TOTAL DE LINKINPUT                       */
 /* -------------------------------------------------------------------------- */
 .link-input-container {
-  background: transparent;
-  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
-  padding: 12px;
+  padding: 16px;
   position: relative;
-  transition: all 0.3s ease;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
 }
 
 .link-input-container:hover {
-  border-color: var(--primary-pulse-red);
-  box-shadow: 0 0 20px rgba(214, 67, 254, 0.4);
+  border-color: rgba(201, 164, 255, 0.4);
+  background: rgba(255, 255, 255, 0.035);
+  box-shadow: 0 0 24px rgba(142, 45, 226, 0.18);
 }
 
 .link-input-label {
@@ -499,13 +500,29 @@ body::after {
   align-items: center;
   gap: 8px;
   font-weight: 700;
-  letter-spacing: 1px;
-  margin-bottom: 10px;
+  font-size: 13px;
+  letter-spacing: 0.3px;
+  color: rgba(235, 235, 245, 0.75);
+  margin-bottom: 12px;
 }
 
 .link-input-label .link-input-icon {
-  animation: blood-pulse 2s infinite;
+  animation: sparkle-pulse 2.4s ease-in-out infinite;
   display: inline-block;
+}
+
+@keyframes sparkle-pulse {
+
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 0.85;
+  }
+
+  50% {
+    transform: scale(1.15) rotate(8deg);
+    opacity: 1;
+  }
 }
 
 .input-wrapper {
@@ -516,42 +533,51 @@ body::after {
 
 .link-input-field {
   flex-grow: 1;
-  padding: 8px 12px;
-  background: rgba(0, 0, 0, 0.5);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  color: var(--text-secondary);
+  min-width: 0;
+  padding: 10px 14px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  color: rgba(235, 235, 245, 0.65);
   font-family: var(--font-mono);
-  font-size: 14px;
+  font-size: 13px;
+  text-overflow: ellipsis;
   transition: all 0.3s ease;
 }
 
 .link-input-field:focus {
-  color: var(--text-primary);
-  border-color: var(--primary-pulse-red);
-  box-shadow: 0 0 15px var(--primary-pulse-red);
+  color: #fff;
+  border-color: rgba(201, 164, 255, 0.6);
+  box-shadow: 0 0 15px rgba(142, 45, 226, 0.35);
 }
 
 .copy-button {
-  padding: 8px 12px;
+  padding: 10px 16px;
   font-size: 13px;
-  background: transparent;
-  border: 2px solid var(--primary-pulse-red);
-  border-radius: 8px;
-  color: var(--primary-pulse-red);
+  background: linear-gradient(90deg, #8e2de2, #4a00e0);
+  border: none;
+  border-radius: 10px;
+  color: #fff;
   font-weight: 700;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 6px;
-  transition: all 0.3s ease;
-  text-shadow: 0 0 10px var(--primary-pulse-red);
+  white-space: nowrap;
+  transition: transform 0.2s ease, box-shadow 0.25s ease, background 0.3s ease;
 }
 
 .copy-button:hover {
-  background-color: var(--primary-pulse-red);
-  color: white;
-  box-shadow: 0 0 20px var(--primary-pulse-red);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(74, 0, 224, 0.35);
+}
+
+.copy-button:active {
+  transform: translateY(0) scale(0.97);
+}
+
+.copy-button.is-copied {
+  background: linear-gradient(90deg, #2ecc71, #17a568);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -1146,20 +1172,26 @@ body::after {
 */
 
 .sidebar-container {
-  background: var(--background-core);
+  background: linear-gradient(180deg, rgba(38, 32, 58, 0.55), rgba(20, 18, 32, 0.55));
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-radius: 20px;
-  border: 1px solid var(--border-color-faint);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.4);
   margin-bottom: 25px;
   overflow: hidden;
-  /* Crucial para que la animación de altura funcione */
-  transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+  position: relative;
+  opacity: 0;
+  transform: translateY(16px);
+  animation: fadeInUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  transition: box-shadow 0.5s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 .sidebar-content {
   display: flex;
   flex-direction: column;
   gap: 15px;
-  padding: 15px;
+  padding: 18px;
   max-height: 1000px;
   /* Altura máxima para mostrar el contenido */
   opacity: 1;
@@ -1179,42 +1211,38 @@ body::after {
 .sidebar-toggle-container {
   display: flex;
   justify-content: center;
-  padding: 2px 0;
-  /* Pequeño espacio para el botón */
+  padding: 4px 0 8px;
 }
 
 .sidebar-toggle-button {
-  background: transparent;
-  border: none;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   cursor: pointer;
-  padding: 5px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
 }
 
 .sidebar-toggle-button:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(142, 45, 226, 0.15);
+  border-color: rgba(201, 164, 255, 0.4);
+  transform: translateY(-1px);
 }
 
 .sidebar-toggle-button svg {
-  width: 28px;
-  height: 28px;
-  color: var(--glow-accent-lavender);
+  width: 18px;
+  height: 18px;
+  color: #c9a4ff;
   transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 /* Rota la flecha cuando el sidebar está colapsado */
 .sidebar-container.collapsed .sidebar-toggle-button svg {
   transform: rotate(180deg);
-}
-
-/* Cambiamos el nombre del contenedor original para que no entre en conflicto */
-.dashboard-info-container {
-  /* Los estilos que tenía este contenedor ahora están en .sidebar-container */
-  /* Lo dejamos vacío o eliminamos sus estilos anteriores si ya los movimos */
 }
 
 /*
@@ -1225,39 +1253,80 @@ body::after {
 
 .empty-inbox-container {
   margin-top: 30px;
-  padding: 50px 30px;
+  padding: 56px 30px;
   text-align: center;
-  background: rgba(26, 26, 42, 0.5);
-  /* Coincide con las otras tarjetas */
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: linear-gradient(180deg, rgba(38, 32, 58, 0.5), rgba(20, 18, 32, 0.5));
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   border-radius: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+.empty-inbox-container::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(201, 164, 255, 0.3), transparent 45%, transparent 55%, rgba(142, 45, 226, 0.25));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.empty-inbox-icon-ring {
+  position: relative;
+  width: 88px;
+  height: 88px;
+  margin: 0 auto 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(142, 45, 226, 0.18), transparent 70%);
+}
+
+.empty-inbox-icon-ring::before,
+.empty-inbox-icon-ring::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(201, 164, 255, 0.3);
+  animation: auth-mark-ring 3s ease-out infinite;
+}
+
+.empty-inbox-icon-ring::after {
+  animation-delay: 1.5s;
 }
 
 .empty-inbox-icon {
-  color: var(--glow-accent-lavender);
-  opacity: 0.4;
-  margin-bottom: 25px;
+  color: #c9a4ff;
+  position: relative;
+  z-index: 1;
   display: inline-block;
-  /* Necesario para que la animación funcione */
   animation: float-icon 6s ease-in-out infinite;
+  filter: drop-shadow(0 0 12px rgba(142, 45, 226, 0.5));
 }
 
 .empty-inbox-title {
   font-size: 20px;
-  font-weight: 600;
-  color: var(--text-primary);
+  font-weight: 700;
+  color: #fff;
   margin: 0 0 10px;
+  letter-spacing: -0.2px;
 }
 
 .empty-inbox-subtitle {
-  font-size: 15px;
-  color: var(--text-secondary);
-  max-width: 300px;
+  font-size: 14.5px;
+  color: rgba(235, 235, 245, 0.55);
+  max-width: 320px;
   margin: 0 auto;
-  line-height: 1.6;
+  line-height: 1.65;
 }
 
 /* Animación sutil para el icono */
@@ -1269,51 +1338,8 @@ body::after {
   }
 
   50% {
-    transform: translateY(-12px);
+    transform: translateY(-10px);
   }
-}
-
-/*
-================================================================================
-|                     SECCIÓN 6: ESTADO VACÍO DE BANDEJA DE ENTRADA            |
-================================================================================
-*/
-
-.empty-inbox-container {
-  margin-top: 30px;
-  padding: 50px 30px;
-  text-align: center;
-  background: rgba(26, 26, 42, 0.5);
-  /* Coincide con las otras tarjetas */
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border-radius: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
-}
-
-.empty-inbox-icon {
-  color: var(--glow-accent-lavender);
-  opacity: 0.4;
-  margin-bottom: 25px;
-  display: inline-block;
-  /* Necesario para que la animación funcione */
-  animation: float-icon 6s ease-in-out infinite;
-}
-
-.empty-inbox-title {
-  font-size: 20px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin: 0 0 10px;
-}
-
-.empty-inbox-subtitle {
-  font-size: 15px;
-  color: var(--text-secondary);
-  max-width: 300px;
-  margin: 0 auto;
-  line-height: 1.6;
 }
 
 /* /src/app/globals.css */
@@ -1332,6 +1358,33 @@ body::after {
   opacity: 0;
   transform: translateY(20px);
   animation: fadeInUp 0.8s 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.inbox-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 22px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.3px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 16px;
+  margin-bottom: 22px;
+  opacity: 0;
+  transform: translateY(10px);
+  animation: fadeInUp 0.6s 0.1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.inbox-count {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: #c9a4ff;
+  background: rgba(142, 45, 226, 0.15);
+  border: 1px solid rgba(201, 164, 255, 0.3);
+  padding: 3px 10px;
+  border-radius: 999px;
 }
 
 .chats-list-title {
