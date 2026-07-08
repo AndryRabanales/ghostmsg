@@ -3902,6 +3902,14 @@ textarea.form-input-field.attention-pulse {
   align-items: center;
   gap: 12px;
   min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
+.premium-chat-header-nametext {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
 }
 
 .premium-chat-avatar {
@@ -3959,6 +3967,16 @@ textarea.form-input-field.attention-pulse {
   gap: 6px;
   font-size: 0.8rem;
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.premium-chat-header-status span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .premium-status-dot {
@@ -4280,4 +4298,58 @@ textarea.form-input-field.attention-pulse {
   opacity: 0.5;
   cursor: not-allowed;
   transform: none;
+}
+
+/* --- Compactación para móvil --- */
+@media (max-width: 480px) {
+  .premium-chat-header {
+    padding: 12px 14px;
+    gap: 8px;
+  }
+
+  .premium-chat-header-identity {
+    gap: 8px;
+  }
+
+  .premium-chat-avatar {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    font-size: 14px;
+  }
+
+  .premium-chat-header h3 {
+    font-size: 0.95rem;
+  }
+
+  .premium-chat-header-status {
+    font-size: 0.7rem;
+  }
+
+  .premium-chat-header-actions {
+    gap: 6px;
+  }
+
+  .premium-timer-pill {
+    padding: 6px 9px;
+    font-size: 0.72rem;
+  }
+
+  .premium-back-btn span,
+  .premium-abandon-btn span {
+    display: none;
+  }
+
+  .premium-back-btn,
+  .premium-abandon-btn {
+    padding: 8px;
+  }
+
+  .premium-chat-messages {
+    padding: 16px;
+  }
+
+  .premium-chat-footer {
+    padding: 12px 14px;
+  }
 }

@@ -214,7 +214,7 @@ export default function ChatDetail({ dashboardId, chatId, onBack }) {
             )}
             <button onClick={onBack} className="premium-back-btn">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
-              Volver
+              <span>Volver</span>
             </button>
           </div>
         </div>

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import AnonMessageForm from "@/components/AnonMessageForm";
+import { tryEscapeToRealBrowser } from "@/utils/inAppBrowser";
 
 const API = process.env.NEXT_PUBLIC_API || "https://api.ghostmsg.space";
 
@@ -43,7 +44,12 @@ export default function PublicUserPage() {
   // Redirección al crear chat
   const handleChatCreated = (newChatEntry) => {
     if (newChatEntry.anonToken && newChatEntry.chatId) {
-      router.push(`/chats/${newChatEntry.anonToken}/${newChatEntry.chatId}`);
+      const chatPath = `/chats/${newChatEntry.anonToken}/${newChatEntry.chatId}`;
+      // Si está atrapado en el navegador embebido de Instagram/Facebook,
+      // intenta sacarlo a su navegador real justo en este gesto del usuario.
+      // Si no aplica o falla en silencio, sigue con la navegación normal.
+      tryEscapeToRealBrowser(`${window.location.origin}${chatPath}`);
+      router.push(chatPath);
     }
   };
 
