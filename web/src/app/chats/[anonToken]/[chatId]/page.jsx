@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { timeAgo } from "@/utils/timeAgo";
 import AnonChatReplyForm from "@/components/AnonChatReplyForm";
 import NotifyMeButton from "@/components/NotifyMeButton";
+import { useViewportHeight } from "@/hooks/useViewportHeight";
 
 const API = process.env.NEXT_PUBLIC_API || "https://api.ghostmsg.space";
 
@@ -42,6 +43,7 @@ const CountdownTimer = ({ expiresAt, onExpire }) => {
 };
 
 export default function PublicChatPage() {
+  useViewportHeight();
   const params = useParams();
   const { anonToken, chatId } = params;
 

@@ -3819,6 +3819,7 @@ textarea.form-input-field.attention-pulse {
   right: 0;
   height: 100vh;
   height: 100dvh;
+  height: var(--app-height, 100dvh);
   z-index: 100;
   overflow: hidden;
 }

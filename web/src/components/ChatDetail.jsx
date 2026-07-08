@@ -4,6 +4,7 @@
 import { useEffect, useState, useRef } from "react";
 import { refreshToken } from "@/utils/auth";
 import MessageForm from "@/components/MessageForm";
+import { useViewportHeight } from "@/hooks/useViewportHeight";
 
 const API = process.env.NEXT_PUBLIC_API || "https://api.ghostmsg.space";
 
@@ -77,6 +78,7 @@ const CountdownTimer = ({ expiresAt, onExpire }) => {
  * Componente principal que muestra la vista de un chat.
  */
 export default function ChatDetail({ dashboardId, chatId, onBack }) {
+  useViewportHeight();
   const [messages, setMessages] = useState([]);
   const [chatInfo, setChatInfo] = useState(null);
 
