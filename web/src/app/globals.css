@@ -3810,13 +3810,14 @@ textarea.form-input-field.attention-pulse {
 .premium-chat-layout {
   font-family: 'Outfit', sans-serif;
   background: var(--chat-bg);
-  height: 100vh;
-  height: 100dvh;
   color: var(--chat-text);
   display: flex;
   flex-direction: column;
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 100;
   overflow: hidden;
 }
