@@ -18,6 +18,73 @@ export default function AnonMessageForm({
   const [mediaType, setMediaType] = useState(null);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
 
+  const clearMedia = () => {
+    setImageBase64(null);
+    setMediaType(null);
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setErrorMsg("");
+
+    if (file.type.startsWith('video/')) {
+      if (file.size > 15 * 1024 * 1024) {
+        setErrorMsg("El video no puede pesar más de 15MB.");
+        return;
+      }
+      setIsProcessingImage(true);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setImageBase64(event.target.result);
+        setMediaType("video");
+        setIsProcessingImage(false);
+      };
+      reader.readAsDataURL(file);
+    } else if (file.type.startsWith('image/')) {
+      if (file.size > 5 * 1024 * 1024) {
+        setErrorMsg("La imagen no puede pesar más de 5MB.");
+        return;
+      }
+      setIsProcessingImage(true);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          const maxSize = 800;
+
+          if (width > height) {
+            if (width > maxSize) {
+              height = Math.round((height * maxSize) / width);
+              width = maxSize;
+            }
+          } else {
+            if (height > maxSize) {
+              width = Math.round((width * maxSize) / height);
+              height = maxSize;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          setImageBase64(dataUrl);
+          setMediaType("image");
+          setIsProcessingImage(false);
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setErrorMsg("Formato de archivo no soportado.");
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg("");
@@ -45,7 +112,6 @@ export default function AnonMessageForm({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error al enviar el mensaje");
 
-      // Guardar en localStorage (Solo 1 chat activo a la vez para mantener el anonimato total)
       try {
         const newChat = {
           chatId: data.chatId,
@@ -55,7 +121,6 @@ export default function AnonMessageForm({
           hasNewReply: false,
           timestamp: new Date().toISOString()
         };
-        // Sobreescribe todo, eliminando cualquier chat/historial viejo que pudiera existir.
         localStorage.setItem("myChats", JSON.stringify([newChat]));
       } catch (e) {
         console.error("Error guardando chat en myChats:", e);
@@ -64,8 +129,7 @@ export default function AnonMessageForm({
       setContent("");
       setAlias("");
       setCharCount(0);
-      setImageBase64(null);
-      setMediaType(null);
+      clearMedia();
 
       if (onChatCreated) {
         onChatCreated(data);
@@ -80,174 +144,117 @@ export default function AnonMessageForm({
   };
 
   const isDisabled = status === "loading" || (!content.trim() && !imageBase64);
+  const counterClass =
+    charCount >= 500 ? "char-counter is-at-limit" :
+    charCount >= 420 ? "char-counter is-near-limit" : "char-counter";
 
-  let buttonText = status === "loading" ? "Enviando..." : "Enviar Mensaje";
+  const attachLabel = isProcessingImage
+    ? "Procesando..."
+    : imageBase64
+      ? (mediaType === 'video' ? 'Video adjunto' : 'Foto adjunta')
+      : 'Adjuntar Foto/Video';
 
-  const placeholderText = "Dime que piensas de mi";
+  const attachChipClass = [
+    "attach-chip",
+    imageBase64 ? "has-media" : "",
+    isProcessingImage ? "is-processing" : ""
+  ].filter(Boolean).join(" ");
+
+  const initial = (creatorName || "?").trim().charAt(0).toUpperCase();
 
   return (
     <div className="anon-form-container mounted">
+      <div className="anon-form-header">
+        <div className="anon-form-avatar">{initial}</div>
+        <div className="anon-form-header-text">
+          <h1>Enviar a {creatorName}</h1>
+          <span>🔒 100% anónimo</span>
+        </div>
+      </div>
 
       {status === "success" ? (
-        <div style={{
-          background: 'rgba(0, 255, 128, 0.08)',
-          border: '1px solid rgba(0, 255, 128, 0.3)',
-          borderRadius: '12px',
-          padding: '24px',
-          textAlign: 'center',
-          color: '#00ff80'
-        }}>
-          <div style={{ fontSize: '32px', marginBottom: '10px' }}>✅</div>
-          <strong>¡Mensaje enviado!</strong>
-          <p style={{ color: 'rgba(235,235,245,0.6)', fontSize: '14px', marginTop: '8px' }}>
-            Te avisaremos por email cuando haya una respuesta.
-          </p>
-          <button
-            onClick={() => setStatus("idle")}
-            style={{
-              marginTop: '15px', background: 'rgba(0,255,128,0.1)',
-              border: '1px solid rgba(0,255,128,0.3)', color: '#00ff80',
-              padding: '8px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: '600'
-            }}
-          >
+        <div className="success-panel">
+          <div className="success-panel-icon">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          </div>
+          <h3>¡Mensaje enviado!</h3>
+          <p>Te avisaremos por email cuando haya una respuesta.</p>
+          <button className="success-panel-again" onClick={() => setStatus("idle")}>
             Enviar otro mensaje
           </button>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="form-element-group">
-
           <input
             type="text"
             placeholder="Tu alias (opcional)"
             value={alias}
             onChange={(e) => setAlias(e.target.value)}
             className="form-input-field"
-            style={{
-              width: '100%',
-              padding: '12px 15px',
-              fontSize: '16px',
-              marginBottom: '12px',
-              boxSizing: 'border-box'
-            }}
             maxLength="30"
           />
           <textarea
-            placeholder={placeholderText}
+            placeholder="Dime que piensas de mi"
             value={content}
             onChange={(e) => { setContent(e.target.value); setCharCount(e.target.value.length); }}
             className="form-input-field"
             rows="4"
             maxLength="500"
-            style={{ fontSize: '16px', padding: '15px', boxSizing: 'border-box', width: '100%' }}
           ></textarea>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginTop: '8px',
-            marginBottom: '10px'
-          }}>
+
+          {imageBase64 && (
+            <div className="media-preview">
+              {mediaType === 'video' ? (
+                <video src={imageBase64} controls />
+              ) : (
+                <img src={imageBase64} alt="Adjunto" />
+              )}
+            </div>
+          )}
+
+          <div className="form-toolbar">
             <div>
               <input
                 type="file"
                 accept="image/*,video/mp4,video/webm"
                 id="image-upload"
                 style={{ display: 'none' }}
-                onChange={(e) => {
-                  const file = e.target.files[0];
-                  if (!file) return;
-
-                  if (file.type.startsWith('video/')) {
-                    if (file.size > 15 * 1024 * 1024) { // 15MB limit for videos in Base64 (still risky, but requested)
-                      setErrorMsg("El video no puede pesar más de 15MB.");
-                      return;
-                    }
-                    setIsProcessingImage(true);
-                    const reader = new FileReader();
-                    reader.onload = (event) => {
-                      setImageBase64(event.target.result);
-                      setMediaType("video");
-                      setIsProcessingImage(false);
-                    };
-                    reader.readAsDataURL(file);
-                  } else if (file.type.startsWith('image/')) {
-                    if (file.size > 5 * 1024 * 1024) {
-                      setErrorMsg("La imagen no puede pesar más de 5MB.");
-                      return;
-                    }
-                    setIsProcessingImage(true);
-                    const reader = new FileReader();
-                    reader.onload = (event) => {
-                      const img = new Image();
-                      img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        let width = img.width;
-                        let height = img.height;
-                        const maxSize = 800;
-
-                        if (width > height) {
-                          if (width > maxSize) {
-                            height = Math.round((height * maxSize) / width);
-                            width = maxSize;
-                          }
-                        } else {
-                          if (height > maxSize) {
-                            width = Math.round((width * maxSize) / height);
-                            height = maxSize;
-                          }
-                        }
-
-                        canvas.width = width;
-                        canvas.height = height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
-                        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-                        setImageBase64(dataUrl);
-                        setMediaType("image");
-                        setIsProcessingImage(false);
-                      };
-                      img.src = event.target.result;
-                    };
-                    reader.readAsDataURL(file);
-                  } else {
-                    setErrorMsg("Formato de archivo no soportado.");
-                  }
-                }}
+                onChange={handleFileChange}
               />
-              <label
-                htmlFor="image-upload"
-                style={{
-                  cursor: 'pointer',
-                  color: imageBase64 ? '#00ff80' : '#8e2de2',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                  <circle cx="8.5" cy="8.5" r="1.5" />
-                  <polyline points="21 15 16 10 5 21" />
-                </svg>
-                {isProcessingImage ? 'Procesando...' : imageBase64 ? (mediaType === 'video' ? 'Video adjunto' : 'Foto adjunta') : 'Adjuntar Foto/Video'}
-              </label>
+              {imageBase64 ? (
+                <label htmlFor="image-upload" className={attachChipClass}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  {attachLabel}
+                  <button
+                    type="button"
+                    className="attach-remove"
+                    onClick={(e) => { e.preventDefault(); clearMedia(); }}
+                    aria-label="Quitar adjunto"
+                  >
+                    ✕
+                  </button>
+                </label>
+              ) : (
+                <label htmlFor="image-upload" className={attachChipClass}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                    <circle cx="8.5" cy="8.5" r="1.5" />
+                    <polyline points="21 15 16 10 5 21" />
+                  </svg>
+                  {attachLabel}
+                </label>
+              )}
             </div>
-            <div className="char-counter">{charCount} / 500</div>
+            <div className={counterClass}>{charCount} / 500</div>
           </div>
 
-          <button
-            type="submit"
-            disabled={isDisabled}
-            className="submit-button"
-            style={{
-              marginTop: '10px',
-              background: 'linear-gradient(90deg, #8e2de2, #4a00e0)',
-              cursor: 'pointer'
-            }}
-          >
-            {buttonText}
+          <button type="submit" disabled={isDisabled} className="submit-button">
+            {status === "loading" && <span className="submit-spinner" />}
+            {status === "loading" ? "Enviando..." : "Enviar Mensaje"}
           </button>
         </form>
       )}

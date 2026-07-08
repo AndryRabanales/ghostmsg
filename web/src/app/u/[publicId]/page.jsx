@@ -73,20 +73,7 @@ export default function PublicUserPage() {
 
   // Renderizado Principal
   return (
-    <div style={{ maxWidth: '520px', margin: '40px auto', padding: '0 20px' }}>
-      <h1 style={{
-        fontSize: '34px',
-        fontWeight: '800',
-        letterSpacing: '-1.5px',
-        background: 'linear-gradient(90deg, #8e2de2, #c9a4ff)',
-        WebkitBackgroundClip: 'text',
-        WebkitTextFillColor: 'transparent',
-        margin: '0 0 15px',
-        textAlign: 'center'
-      }}>
-        Enviar a {creatorInfo.creatorName}
-      </h1>
-
+    <div className="anon-page-wrap">
       <AnonMessageForm
         publicId={publicId}
         onChatCreated={handleChatCreated}
