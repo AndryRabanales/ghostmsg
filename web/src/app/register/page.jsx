@@ -4,110 +4,15 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import GoogleLoginButton from "@/components/GoogleLoginButton";
 
-const API = process.env.NEXT_PUBLIC_API || "https://api.ghostmsg.space";
-
 export default function RegisterPage() {
   const router = useRouter();
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-
   const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
-
-  const handleRegister = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-
-    if (password !== confirmPassword) {
-      setError("Las contraseñas no coinciden.");
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const guestToken = localStorage.getItem("token");
-      const headers = { "Content-Type": "application/json" };
-      if (guestToken) {
-        headers["Authorization"] = `Bearer ${guestToken}`;
-      }
-
-      const res = await fetch(`${API}/auth/register`, {
-        method: "POST",
-        headers: headers,
-        body: JSON.stringify({ name, email, password }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Error al crear la cuenta");
-      }
-
-      localStorage.clear();
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("publicId", data.publicId);
-
-      if (data.dashboardId) {
-        router.push(`/dashboard/${data.dashboardId}`);
-      } else {
-        setError("Error: No se recibió el ID del dashboard.");
-      }
-
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="auth-container">
       <main className="auth-card">
         <h1>Crear Cuenta</h1>
-        <form onSubmit={handleRegister} className="auth-form">
-          <input
-            type="text"
-            placeholder="Tu nombre"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            className="auth-input"
-          />
-          <input
-            type="email"
-            placeholder="Tu email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="auth-input"
-          />
-          <input
-            type="password"
-            placeholder="Crea una contraseña"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            className="auth-input"
-          />
-          <input
-            type="password"
-            placeholder="Repite tu contraseña"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
-            className="auth-input"
-          />
-
-
-
-          <button type="submit" disabled={loading} className="auth-button">
-            {loading ? "Creando..." : "Registrarse"}
-          </button>
-          {error && <p className="auth-error">{error}</p>}
-        </form>
-        <div className="auth-divider">o</div>
+        <p className="auth-subtitle">Regístrate con tu cuenta de Google en un clic.</p>
         <GoogleLoginButton
           onSuccess={(data) => {
             localStorage.clear();
@@ -117,8 +22,9 @@ export default function RegisterPage() {
           }}
           onError={setError}
         />
+        {error && <p className="auth-error">{error}</p>}
         <p className="auth-footer-link">
-          ¿Ya tienes una cuenta? <a href="/">Inicia sesión</a>
+          ¿Ya tienes una cuenta? <a href="/login">Inicia sesión</a>
         </p>
       </main>
     </div>
