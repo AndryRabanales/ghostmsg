@@ -6,6 +6,7 @@ import { refreshToken, getAuthHeaders } from "@/utils/auth";
 import MessageList from "@/components/MessageList";
 import EditProfile from "@/components/EditProfile";
 import ShareLinkGuideModal from "@/components/ShareLinkGuideModal";
+import CollageBoard from "@/components/CollageBoard";
 
 
 const API = process.env.NEXT_PUBLIC_API || "https://api.ghostmsg.space";
@@ -26,6 +27,7 @@ export default function DashboardPage() {
     const [creator, setCreator] = useState(null);
     const [loading, setLoading] = useState(true);
     const [showShareGuideModal, setShowShareGuideModal] = useState(false);
+    const [showCollage, setShowCollage] = useState(false);
 
     const pageStyles = ``; // Tus estilos aquí
 
@@ -120,6 +122,12 @@ export default function DashboardPage() {
                                 creator={creator}
                                 onSaved={(updated) => setCreator((prev) => ({ ...prev, ...updated }))}
                             />
+                            <button className="dashboard-collage-btn" onClick={() => setShowCollage(true)}>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" />
+                                </svg>
+                                Crear collage de mensajes
+                            </button>
                         </div>
 
                         <div className="fade-in-up" style={{ animationDelay: '0.3s' }}>
@@ -132,6 +140,14 @@ export default function DashboardPage() {
                     <ShareLinkGuideModal
                         onClose={closeShareGuideModal}
                         publicLink={publicLink}
+                    />
+                )}
+
+                {showCollage && creator && (
+                    <CollageBoard
+                        dashboardId={id}
+                        creatorName={creator.name}
+                        onClose={() => setShowCollage(false)}
                     />
                 )}
             </div>
