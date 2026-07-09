@@ -2785,6 +2785,127 @@ textarea.form-input-field.attention-pulse {
   box-shadow: none;
 }
 
+/* Deja salir el menú de opciones por encima del recorte del item. */
+.chat-item.menu-open {
+  overflow: visible;
+  z-index: 6;
+}
+
+.chat-item-actions {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.chat-item-menu-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(235, 235, 245, 0.6);
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.chat-item-menu-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+
+.chat-item-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+}
+
+.chat-item-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 50;
+  min-width: 150px;
+  padding: 6px;
+  border-radius: 12px;
+  background: #221d33;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 14px 34px -8px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: fadeInUp 0.18s ease forwards;
+}
+
+.chat-item-menu button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 10px;
+  border: none;
+  background: transparent;
+  color: #eee;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.chat-item-menu button:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.chat-item-menu button.is-danger {
+  color: #ff8f8f;
+}
+
+.chat-item-menu button.is-danger:hover {
+  background: rgba(239, 68, 68, 0.15);
+}
+
+/* Cabecera de la bandeja con el toggle de archivados. */
+.inbox-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 13px;
+  margin-bottom: 18px;
+}
+
+.inbox-header-row .inbox-title {
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+
+.inbox-view-toggle {
+  flex-shrink: 0;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(201, 164, 255, 0.25);
+  background: rgba(201, 164, 255, 0.08);
+  color: #c9a4ff;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.inbox-view-toggle:hover {
+  background: rgba(201, 164, 255, 0.16);
+  transform: translateY(-1px);
+}
+
 /* src/app/globals.css */
 
 /* ... (tus otros estilos) ... */

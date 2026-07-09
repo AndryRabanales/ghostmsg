@@ -17,8 +17,14 @@ const IconVer = () => (
   </svg>
 );
 
+const IconDots = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+    <circle cx="12" cy="5" r="1.8" /><circle cx="12" cy="12" r="1.8" /><circle cx="12" cy="19" r="1.8" />
+  </svg>
+);
+
 // --- SUBCOMPONENTE ChatItem (SIMPLIFICADO) ---
-const ChatItem = ({ chat, onOpenChat, isOnline }) => {
+const ChatItem = ({ chat, onOpenChat, isOnline, isArchivedView, menuOpen, onToggleMenu, onArchive, onDelete }) => {
   const preview = chat.previewMessage;
 
   const getButtonContent = () => {
@@ -49,7 +55,7 @@ const ChatItem = ({ chat, onOpenChat, isOnline }) => {
 
   return (
     <div
-      className={`chat-item ${chat.anonReplied ? 'new-reply' : ''} ${!chat.isOpened ? 'unopened' : ''}`}
+      className={`chat-item ${chat.anonReplied ? 'new-reply' : ''} ${!chat.isOpened ? 'unopened' : ''} ${menuOpen ? 'menu-open' : ''}`}
       onClick={() => onOpenChat(chat.id)}
     >
       <div className={`chat-item-avatar ${isOnline ? 'is-online' : ''}`}>
@@ -76,9 +82,38 @@ const ChatItem = ({ chat, onOpenChat, isOnline }) => {
         </div>
       </div>
 
-      <button className="chat-item-button">
-        {getButtonContent()}
-      </button>
+      <div className="chat-item-actions" onClick={(e) => e.stopPropagation()}>
+        <button className="chat-item-button" onClick={() => onOpenChat(chat.id)}>
+          {getButtonContent()}
+        </button>
+        <button
+          className="chat-item-menu-btn"
+          onClick={(e) => { e.stopPropagation(); onToggleMenu(chat.id); }}
+          aria-label="Opciones"
+        >
+          <IconDots />
+        </button>
+
+        {menuOpen && (
+          <>
+            <div className="chat-item-menu-backdrop" onClick={() => onToggleMenu(null)} />
+            <div className="chat-item-menu">
+              {isArchivedView ? (
+                <button onClick={() => onArchive(chat.id, false)}>
+                  ♻️ Restaurar
+                </button>
+              ) : (
+                <button onClick={() => onArchive(chat.id, true)}>
+                  🗂 Archivar
+                </button>
+              )}
+              <button className="is-danger" onClick={() => onDelete(chat.id)}>
+                🗑 Borrar
+              </button>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 };
@@ -96,12 +131,16 @@ export default function MessageList({ dashboardId }) {
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [view, setView] = useState("active"); // 'active' | 'archived'
+  const [menuId, setMenuId] = useState(null);
 
   // Estado para los anónimos en línea
   const [anonStatuses, setAnonStatuses] = useState({});
 
   const router = useRouter();
   const wsRef = useRef(null);
+  const viewRef = useRef(view);
+  viewRef.current = view;
 
   const getAuthHeaders = (token) => token ? { Authorization: `Bearer ${token}` } : { Authorization: `Bearer ${localStorage.getItem("token")}` };
   const handleAuthFailure = () => { localStorage.clear(); router.push("/login?session=expired"); };
@@ -111,11 +150,10 @@ export default function MessageList({ dashboardId }) {
     if (!dashboardId) return;
     try {
       const headers = getAuthHeaders(token);
-      // Ya no necesitamos llamar a /creators/me para las vidas, pero lo dejamos si necesitas otros datos del perfil
-      // Si solo te importan los chats, podrías quitar meRes, pero por seguridad de sesión lo dejamos.
+      const archivedParam = viewRef.current === "archived" ? "1" : "0";
       const [meRes, chatsRes] = await Promise.all([
         fetch(`${API}/creators/me`, { headers, cache: 'no-store' }),
-        fetch(`${API}/dashboard/${dashboardId}/chats`, { headers, cache: 'no-store' })
+        fetch(`${API}/dashboard/${dashboardId}/chats?archived=${archivedParam}`, { headers, cache: 'no-store' })
       ]);
 
       if (meRes.status === 401 || chatsRes.status === 401) {
@@ -135,6 +173,38 @@ export default function MessageList({ dashboardId }) {
       setError("⚠️ Error al cargar tus chats. Intenta refrescar la página.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Archivar / restaurar un chat (persiste en BD).
+  const handleArchive = async (chatId, archived) => {
+    setMenuId(null);
+    setChats((prev) => prev.filter((c) => c.id !== chatId)); // sale de la vista actual
+    try {
+      await fetch(`${API}/dashboard/${dashboardId}/chats/${chatId}/archive`, {
+        method: "PATCH",
+        headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ archived }),
+      });
+    } catch (err) {
+      console.error("Error archivando:", err);
+      fetchData();
+    }
+  };
+
+  // Borrar un chat (lo abandona: se elimina para ambos). Pide confirmación.
+  const handleDelete = async (chatId) => {
+    setMenuId(null);
+    if (!window.confirm("¿Borrar este chat? Se eliminará para siempre y abandonarás la conversación.")) return;
+    setChats((prev) => prev.filter((c) => c.id !== chatId));
+    try {
+      await fetch(`${API}/dashboard/${dashboardId}/chats/${chatId}`, {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      });
+    } catch (err) {
+      console.error("Error borrando:", err);
+      fetchData();
     }
   };
 
@@ -159,10 +229,15 @@ export default function MessageList({ dashboardId }) {
     }
   };
 
+  // Carga inicial y al cambiar de vista (activos / archivados).
+  useEffect(() => {
+    setLoading(true);
+    fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dashboardId, view]);
+
   // --- useEffect (WebSocket) ---
   useEffect(() => {
-    fetchData();
-
     const token = localStorage.getItem("token");
     if (!token) {
       console.error("No hay token para la conexión WS, abortando.");
@@ -205,12 +280,22 @@ export default function MessageList({ dashboardId }) {
     opacity: 0,
   });
 
+  const isArchivedView = view === "archived";
+
   return (
     <div>
-      <h2 className="inbox-title">
-        Bandeja de Entrada
-        {chats.length > 0 && <span className="inbox-count">{chats.length}</span>}
-      </h2>
+      <div className="inbox-header-row">
+        <h2 className="inbox-title">
+          {isArchivedView ? "Archivados" : "Bandeja de Entrada"}
+          {chats.length > 0 && <span className="inbox-count">{chats.length}</span>}
+        </h2>
+        <button
+          className="inbox-view-toggle"
+          onClick={() => { setMenuId(null); setView(isArchivedView ? "active" : "archived"); }}
+        >
+          {isArchivedView ? "← Volver a la bandeja" : "🗂 Archivados"}
+        </button>
+      </div>
       {loading && <p style={{ textAlign: 'center' }}>Cargando chats...</p>}
       {error && <p style={{ color: "#FE3C72", textAlign: 'center' }}>{error}</p>}
 
@@ -219,8 +304,17 @@ export default function MessageList({ dashboardId }) {
           <div className="empty-inbox-icon-ring">
             <EmptyInboxIcon />
           </div>
-          <p className="empty-inbox-title">Tu espacio secreto está silencioso</p>
-          <p className="empty-inbox-subtitle">¡Comparte tu link público para que la conversación comience!</p>
+          {isArchivedView ? (
+            <>
+              <p className="empty-inbox-title">No tienes chats archivados</p>
+              <p className="empty-inbox-subtitle">Los chats que archives aparecerán aquí.</p>
+            </>
+          ) : (
+            <>
+              <p className="empty-inbox-title">Tu espacio secreto está silencioso</p>
+              <p className="empty-inbox-subtitle">¡Comparte tu link público para que la conversación comience!</p>
+            </>
+          )}
         </div>
       )}
 
@@ -232,6 +326,11 @@ export default function MessageList({ dashboardId }) {
                 chat={c}
                 onOpenChat={handleOpenChat}
                 isOnline={anonStatuses[c.id] === 'online'}
+                isArchivedView={isArchivedView}
+                menuOpen={menuId === c.id}
+                onToggleMenu={(id) => setMenuId((cur) => (cur === id ? null : id))}
+                onArchive={handleArchive}
+                onDelete={handleDelete}
               />
             </div>
           ))}
