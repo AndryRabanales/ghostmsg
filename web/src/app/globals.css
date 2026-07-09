@@ -4375,6 +4375,29 @@ textarea.form-input-field.attention-pulse {
 |                     EDITAR PERFIL (Dashboard)                                |
 ================================================================================
 */
+.dashboard-share-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 25px;
+  padding: 11px 18px;
+  border-radius: 14px;
+  background: linear-gradient(90deg, #8e2de2, #4a00e0);
+  border: none;
+  color: #fff;
+  font-family: var(--font-main);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(74, 0, 224, 0.32);
+  transition: transform 0.2s ease, box-shadow 0.25s ease;
+}
+
+.dashboard-share-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(74, 0, 224, 0.45);
+}
+
 .edit-profile-trigger {
   display: inline-flex;
   align-items: center;
@@ -4510,4 +4533,215 @@ textarea.form-input-field.attention-pulse {
 .edit-profile-save:disabled {
   opacity: 0.6;
   cursor: wait;
+}
+/*
+================================================================================
+|                     MODAL: COMPARTIR / RECIBIR MENSAJES                      |
+================================================================================
+*/
+.share-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(13, 12, 34, 0.85);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: fadeInOverlay 0.35s forwards;
+}
+
+@keyframes fadeInOverlay {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.share-modal {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  padding: 30px 26px 26px;
+  border-radius: 26px;
+  text-align: center;
+  color: var(--text-primary, #f5f5f5);
+  background: linear-gradient(180deg, rgba(38, 32, 58, 0.96), rgba(20, 18, 32, 0.96));
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: 0 24px 70px -10px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transform: translateY(20px) scale(0.96);
+  opacity: 0;
+  animation: popUpModal 0.5s 0.05s forwards cubic-bezier(0.34, 1.4, 0.5, 1);
+}
+
+@keyframes popUpModal {
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.share-modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(235, 235, 245, 0.7);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.share-modal-close:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.share-modal-emoji {
+  font-size: 40px;
+  line-height: 1;
+  margin-bottom: 12px;
+  animation: auth-mark-float 4s ease-in-out infinite;
+}
+
+.share-modal-title {
+  font-size: 21px;
+  font-weight: 800;
+  margin: 0 0 8px;
+  color: #fff;
+  letter-spacing: -0.4px;
+}
+
+.share-modal-sub {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: rgba(235, 235, 245, 0.6);
+  margin: 0 auto 22px;
+  max-width: 320px;
+}
+
+.share-modal-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  width: 100%;
+  padding: 15px;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(90deg, #8e2de2, #4a00e0);
+  color: #fff;
+  font-family: var(--font-main);
+  font-size: 15.5px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-bottom: 16px;
+  transition: transform 0.15s ease, box-shadow 0.25s ease;
+  box-shadow: 0 8px 22px rgba(74, 0, 224, 0.35);
+}
+
+.share-modal-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(74, 0, 224, 0.45);
+}
+
+.share-modal-networks {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.share-net {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 13px 6px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(235, 235, 245, 0.85);
+  font-family: var(--font-main);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.share-net-icon {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.share-net:hover {
+  transform: translateY(-3px);
+}
+
+.share-net--ig:hover {
+  border-color: #e1306c;
+  background: rgba(225, 48, 108, 0.14);
+}
+
+.share-net--wa:hover {
+  border-color: #25d366;
+  background: rgba(37, 211, 102, 0.14);
+}
+
+.share-net--fb:hover {
+  border-color: #1877f2;
+  background: rgba(24, 119, 242, 0.14);
+}
+
+.share-modal-linkrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 7px 7px 7px 14px;
+}
+
+.share-modal-linkinput {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: rgba(235, 235, 245, 0.7);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  text-overflow: ellipsis;
+}
+
+.share-modal-copy {
+  flex-shrink: 0;
+  padding: 8px 15px;
+  border: none;
+  border-radius: 9px;
+  background: linear-gradient(90deg, #8e2de2, #4a00e0);
+  color: #fff;
+  font-family: var(--font-main);
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter 0.2s ease;
+}
+
+.share-modal-copy:hover {
+  filter: brightness(1.12);
+}
+
+.share-modal-toast {
+  margin-top: 14px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #b9ffcf;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 12px;
+  padding: 10px 14px;
+  animation: fadeInUp 0.3s ease forwards;
 }
