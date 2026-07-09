@@ -307,6 +307,15 @@ export default function PublicChatPage() {
 
         <NotifyMeButton anonToken={anonToken} chatId={chatId} />
 
+        <div className="return-reminder">
+          <span className="return-reminder-text">
+            💜 Guarda este enlace y vuelve para ver si <b>{creatorName}</b> te respondió.
+          </span>
+          <button className="return-reminder-btn" onClick={copyPageUrl}>
+            {linkCopied ? "¡Copiado! ✓" : "Copiar enlace"}
+          </button>
+        </div>
+
         <div className="premium-chat-messages">
           {error && <p style={{ color: "#ef4444", textAlign: 'center', background: 'rgba(239, 68, 68, 0.1)', padding: '10px', borderRadius: '8px' }}>{error}</p>}
           {messages.length === 0 && !loading && (

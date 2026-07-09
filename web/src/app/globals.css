@@ -5708,3 +5708,53 @@ textarea.form-input-field.attention-pulse {
 .ig-escape-stay:hover {
   color: rgba(235, 235, 245, 0.8);
 }
+
+/*
+================================================================================
+|                     RECORDATORIO DE REGRESO (Anónimo)                       |
+================================================================================
+*/
+.return-reminder {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 12px 8px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.28);
+  font-family: 'Outfit', sans-serif;
+}
+
+.return-reminder-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: rgba(235, 235, 245, 0.8);
+}
+
+.return-reminder-text b {
+  color: #c9a4ff;
+}
+
+.return-reminder-btn {
+  flex-shrink: 0;
+  padding: 8px 13px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(90deg, #8e2de2, #4a00e0);
+  color: #fff;
+  font-family: 'Outfit', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: filter 0.2s ease, transform 0.15s ease;
+}
+
+.return-reminder-btn:hover {
+  filter: brightness(1.12);
+  transform: translateY(-1px);
+}
