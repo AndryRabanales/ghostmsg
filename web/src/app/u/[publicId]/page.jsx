@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import AnonMessageForm from "@/components/AnonMessageForm";
 import AnonChatsBadge from "@/components/AnonChatsBadge";
-import { tryEscapeToRealBrowser } from "@/utils/inAppBrowser";
+import { isInAppBrowser, tryEscapeToRealBrowser } from "@/utils/inAppBrowser";
 import { openStore } from "@/utils/appStore";
 
 const API = process.env.NEXT_PUBLIC_API || "https://api.ghostmsg.space";
@@ -20,6 +20,24 @@ export default function PublicUserPage() {
   const [creatorInfo, setCreatorInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [inApp, setInApp] = useState(false);
+  const [continueHere, setContinueHere] = useState(false);
+  const [escapeTried, setEscapeTried] = useState(false);
+
+  useEffect(() => {
+    setInApp(isInAppBrowser());
+  }, []);
+
+  const handleEscape = () => {
+    const ok = tryEscapeToRealBrowser(window.location.href);
+    if (!ok) {
+      setContinueHere(true);
+      return;
+    }
+    setEscapeTried(true);
+    // Si el salto falló (iOS lo bloqueó), revela la opción de continuar aquí.
+    setTimeout(() => setEscapeTried(true), 1500);
+  };
 
   // Carga los datos del creador
   useEffect(() => {
@@ -46,12 +64,7 @@ export default function PublicUserPage() {
   // Redirección al crear chat
   const handleChatCreated = (newChatEntry) => {
     if (newChatEntry.anonToken && newChatEntry.chatId) {
-      const chatPath = `/chats/${newChatEntry.anonToken}/${newChatEntry.chatId}`;
-      // Si está atrapado en el navegador embebido de Instagram/Facebook,
-      // intenta sacarlo a su navegador real justo en este gesto del usuario.
-      // Si no aplica o falla en silencio, sigue con la navegación normal.
-      tryEscapeToRealBrowser(`${window.location.origin}${chatPath}`);
-      router.push(chatPath);
+      router.push(`/chats/${newChatEntry.anonToken}/${newChatEntry.chatId}`);
     }
   };
 
@@ -75,6 +88,37 @@ export default function PublicUserPage() {
     return (
       <div style={{ color: 'white', textAlign: 'center', paddingTop: '100px', fontFamily: 'monospace' }}>
         Creador no encontrado.
+      </div>
+    );
+  }
+
+  // --- Pantalla de escape de Instagram/Facebook (opción B) ---
+  if (inApp && !continueHere) {
+    return (
+      <div className="anon-page-wrap">
+        <div className="ig-escape-card">
+          <div className="ig-escape-icon">🌐</div>
+          <h2 className="ig-escape-title">Ábrelo en tu navegador</h2>
+          <p className="ig-escape-text">
+            Estás dentro de <b>Instagram</b>. Para escribirle a{" "}
+            <b>{creatorInfo.creatorName}</b> y poder ver su respuesta después,
+            ábrelo en tu navegador.
+          </p>
+          <button className="ig-escape-btn" onClick={handleEscape}>
+            🌐 Abrir en mi navegador
+          </button>
+
+          {escapeTried && (
+            <p className="ig-escape-manual">
+              ¿No se abrió? Toca <b>⋯</b> (arriba a la derecha) y elige{" "}
+              <b>“Abrir en el navegador”</b>.
+            </p>
+          )}
+
+          <button className="ig-escape-stay" onClick={() => setContinueHere(true)}>
+            Continuar aquí de todos modos
+          </button>
+        </div>
       </div>
     );
   }

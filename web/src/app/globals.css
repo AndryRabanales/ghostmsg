@@ -5566,3 +5566,88 @@ textarea.form-input-field.attention-pulse {
 .download-web-link:hover {
   color: #fff;
 }
+
+/*
+================================================================================
+|                     ESCAPE DE INSTAGRAM (opción B)                          |
+================================================================================
+*/
+.ig-escape-card {
+  max-width: 380px;
+  margin: 40px auto;
+  padding: 32px 26px;
+  border-radius: 24px;
+  text-align: center;
+  font-family: 'Outfit', sans-serif;
+  background: linear-gradient(180deg, rgba(38, 32, 58, 0.9), rgba(20, 18, 32, 0.9));
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: 0 20px 60px -10px rgba(0, 0, 0, 0.55);
+  animation: fadeInUp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.ig-escape-icon {
+  font-size: 42px;
+  line-height: 1;
+  margin-bottom: 14px;
+}
+
+.ig-escape-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #fff;
+  margin: 0 0 10px;
+  letter-spacing: -0.4px;
+}
+
+.ig-escape-text {
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: rgba(235, 235, 245, 0.65);
+  margin: 0 0 24px;
+}
+
+.ig-escape-btn {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(90deg, #8e2de2, #4a00e0);
+  color: #fff;
+  font-family: 'Outfit', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 22px rgba(74, 0, 224, 0.4);
+  transition: transform 0.15s ease, box-shadow 0.25s ease;
+}
+
+.ig-escape-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(74, 0, 224, 0.5);
+}
+
+.ig-escape-manual {
+  margin: 16px 0 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #ffd08a;
+  background: rgba(255, 193, 7, 0.08);
+  border: 1px solid rgba(255, 193, 7, 0.25);
+  border-radius: 12px;
+  padding: 10px 14px;
+}
+
+.ig-escape-stay {
+  margin-top: 18px;
+  background: none;
+  border: none;
+  color: rgba(235, 235, 245, 0.45);
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.ig-escape-stay:hover {
+  color: rgba(235, 235, 245, 0.8);
+}
