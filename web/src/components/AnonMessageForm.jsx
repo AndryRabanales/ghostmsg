@@ -207,7 +207,6 @@ export default function AnonMessageForm({
         </div>
         <div className="anon-form-header-text">
           <h1>Enviar a {creatorName}</h1>
-          <span>🔒 100% anónimo</span>
         </div>
       </div>
 
