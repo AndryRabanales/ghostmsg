@@ -1,6 +1,7 @@
 // src/components/MessageList.jsx
 "use client";
 import { useEffect, useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import { refreshToken } from "@/utils/auth";
 import { useRouter } from "next/navigation";
 
@@ -26,6 +27,18 @@ const IconDots = () => (
 // --- SUBCOMPONENTE ChatItem (SIMPLIFICADO) ---
 const ChatItem = ({ chat, onOpenChat, isOnline, isArchivedView, menuOpen, onToggleMenu, onArchive, onDelete }) => {
   const preview = chat.previewMessage;
+  const btnRef = useRef(null);
+  const [menuPos, setMenuPos] = useState(null);
+
+  // Posiciona el menú (portal a body) justo debajo del botón ⋯.
+  useEffect(() => {
+    if (menuOpen && btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      setMenuPos({ top: r.bottom + 6, right: window.innerWidth - r.right });
+    } else {
+      setMenuPos(null);
+    }
+  }, [menuOpen]);
 
   const getButtonContent = () => {
     if (chat.anonReplied) {
@@ -55,7 +68,7 @@ const ChatItem = ({ chat, onOpenChat, isOnline, isArchivedView, menuOpen, onTogg
 
   return (
     <div
-      className={`chat-item ${chat.anonReplied ? 'new-reply' : ''} ${!chat.isOpened ? 'unopened' : ''} ${menuOpen ? 'menu-open' : ''}`}
+      className={`chat-item ${chat.anonReplied ? 'new-reply' : ''} ${!chat.isOpened ? 'unopened' : ''}`}
       onClick={() => onOpenChat(chat.id)}
     >
       <div className={`chat-item-avatar ${isOnline ? 'is-online' : ''}`}>
@@ -87,33 +100,33 @@ const ChatItem = ({ chat, onOpenChat, isOnline, isArchivedView, menuOpen, onTogg
           {getButtonContent()}
         </button>
         <button
+          ref={btnRef}
           className="chat-item-menu-btn"
           onClick={(e) => { e.stopPropagation(); onToggleMenu(chat.id); }}
           aria-label="Opciones"
         >
           <IconDots />
         </button>
-
-        {menuOpen && (
-          <>
-            <div className="chat-item-menu-backdrop" onClick={() => onToggleMenu(null)} />
-            <div className="chat-item-menu">
-              {isArchivedView ? (
-                <button onClick={() => onArchive(chat.id, false)}>
-                  ♻️ Restaurar
-                </button>
-              ) : (
-                <button onClick={() => onArchive(chat.id, true)}>
-                  🗂 Archivar
-                </button>
-              )}
-              <button className="is-danger" onClick={() => onDelete(chat.id)}>
-                🗑 Borrar
-              </button>
-            </div>
-          </>
-        )}
       </div>
+
+      {menuOpen && menuPos && createPortal(
+        <>
+          <div className="chat-menu-backdrop" onClick={(e) => { e.stopPropagation(); onToggleMenu(null); }} />
+          <div
+            className="chat-menu-pop"
+            style={{ top: menuPos.top, right: menuPos.right }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {isArchivedView ? (
+              <button onClick={() => onArchive(chat.id, false)}>♻️ Restaurar</button>
+            ) : (
+              <button onClick={() => onArchive(chat.id, true)}>🗂 Archivar</button>
+            )}
+            <button className="is-danger" onClick={() => onDelete(chat.id)}>🗑 Borrar</button>
+          </div>
+        </>,
+        document.body
+      )}
     </div>
   );
 };

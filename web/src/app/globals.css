@@ -2785,12 +2785,6 @@ textarea.form-input-field.attention-pulse {
   box-shadow: none;
 }
 
-/* Deja salir el menú de opciones por encima del recorte del item. */
-.chat-item.menu-open {
-  overflow: visible;
-  z-index: 6;
-}
-
 .chat-item-actions {
   position: relative;
   display: flex;
@@ -2818,39 +2812,38 @@ textarea.form-input-field.attention-pulse {
   color: #fff;
 }
 
-.chat-item-menu-backdrop {
+/* Menú de opciones renderizado en un portal a body (no lo recorta nada). */
+.chat-menu-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 40;
+  z-index: 1000;
 }
 
-.chat-item-menu {
-  position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
-  z-index: 50;
-  min-width: 150px;
+.chat-menu-pop {
+  position: fixed;
+  z-index: 1001;
+  min-width: 160px;
   padding: 6px;
   border-radius: 12px;
   background: #221d33;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 14px 34px -8px rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.7);
   display: flex;
   flex-direction: column;
   gap: 2px;
   animation: fadeInUp 0.18s ease forwards;
 }
 
-.chat-item-menu button {
+.chat-menu-pop button {
   display: flex;
   align-items: center;
   gap: 8px;
   width: 100%;
-  padding: 9px 10px;
+  padding: 11px 12px;
   border: none;
   background: transparent;
   color: #eee;
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 600;
   text-align: left;
   border-radius: 8px;
@@ -2858,15 +2851,15 @@ textarea.form-input-field.attention-pulse {
   transition: background 0.15s ease;
 }
 
-.chat-item-menu button:hover {
+.chat-menu-pop button:hover {
   background: rgba(255, 255, 255, 0.08);
 }
 
-.chat-item-menu button.is-danger {
+.chat-menu-pop button.is-danger {
   color: #ff8f8f;
 }
 
-.chat-item-menu button.is-danger:hover {
+.chat-menu-pop button.is-danger:hover {
   background: rgba(239, 68, 68, 0.15);
 }
 
@@ -4640,6 +4633,110 @@ textarea.form-input-field.attention-pulse {
   gap: 16px;
 }
 
+/* --- Ajustador de foto (mover + zoom dentro del círculo) --- */
+.photo-cropper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.crop-viewport {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #0d0c16;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.crop-viewport:active {
+  cursor: grabbing;
+}
+
+.crop-img {
+  position: absolute;
+  left: 0;
+  top: 0;
+  max-width: none;
+  pointer-events: none;
+}
+
+/* Círculo guía: oscurece las esquinas fuera del círculo que verán los anónimos.
+   El box-shadow gigante lo recorta el overflow:hidden del viewport. */
+.crop-ring {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: 50%;
+  box-shadow:
+    inset 0 0 0 2px rgba(201, 164, 255, 0.9),
+    0 0 0 9999px rgba(13, 12, 22, 0.55);
+}
+
+.crop-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 220px;
+}
+
+.crop-zoom-icon {
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+.crop-zoom {
+  flex: 1;
+  accent-color: #8e2de2;
+  cursor: pointer;
+}
+
+.crop-hint {
+  margin: 0;
+  font-size: 11.5px;
+  color: rgba(235, 235, 245, 0.5);
+}
+
+.crop-actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  max-width: 220px;
+}
+
+.crop-cancel,
+.crop-apply {
+  flex: 1;
+  padding: 10px;
+  border-radius: 10px;
+  border: none;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.crop-cancel {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(235, 235, 245, 0.75);
+}
+
+.crop-cancel:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.crop-apply {
+  background: linear-gradient(90deg, #8e2de2, #4a00e0);
+  color: #fff;
+}
+
+.crop-apply:hover {
+  filter: brightness(1.1);
+}
+
 .edit-profile-photo {
   width: 68px;
   height: 68px;
@@ -5873,6 +5970,50 @@ textarea.form-input-field.attention-pulse {
 |                     PÁGINA DE DESCARGA                                       |
 ================================================================================
 */
+/* Apartado simple: copiar el enlace para abrirlo en el navegador. */
+.create-link-box {
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+
+.create-link-url {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #c9a4ff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.create-copy-btn-lg {
+  width: 100%;
+  padding: 15px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #8e2de2, #4a00e0);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter 0.2s ease, transform 0.15s ease;
+}
+
+.create-copy-btn-lg:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.create-chrome-btn {
+  margin-bottom: 16px;
+}
+
 .download-stores {
   display: flex;
   flex-direction: column;

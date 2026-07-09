@@ -5,12 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import AnonMessageForm from "@/components/AnonMessageForm";
 import AnonChatsBadge from "@/components/AnonChatsBadge";
 import NotesClothesline from "@/components/NotesClothesline";
-import { isInAppBrowser, tryEscapeToRealBrowser } from "@/utils/inAppBrowser";
-import { openStore } from "@/utils/appStore";
 
 const API = process.env.NEXT_PUBLIC_API || "https://api.ghostmsg.space";
-
-// Constants removed
 
 export default function PublicUserPage() {
   const params = useParams();
@@ -21,24 +17,6 @@ export default function PublicUserPage() {
   const [creatorInfo, setCreatorInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [inApp, setInApp] = useState(false);
-  const [continueHere, setContinueHere] = useState(false);
-  const [escapeTried, setEscapeTried] = useState(false);
-
-  useEffect(() => {
-    setInApp(isInAppBrowser());
-  }, []);
-
-  const handleEscape = () => {
-    const ok = tryEscapeToRealBrowser(window.location.href);
-    if (!ok) {
-      setContinueHere(true);
-      return;
-    }
-    setEscapeTried(true);
-    // Si el salto falló (iOS lo bloqueó), revela la opción de continuar aquí.
-    setTimeout(() => setEscapeTried(true), 1500);
-  };
 
   // Carga los datos del creador
   useEffect(() => {
@@ -93,49 +71,8 @@ export default function PublicUserPage() {
     );
   }
 
-  // --- Pantalla de escape de Instagram/Facebook (opción B) ---
-  if (inApp && !continueHere) {
-    return (
-      <div className="anon-page-wrap">
-        {/* Flecha animada apuntando al menú ⋯ de Instagram (arriba a la derecha) */}
-        <div className="ig-point">Toca aquí ⋯</div>
-
-        <div className="ig-escape-card">
-          <div className="ig-escape-icon">🌐</div>
-          <h2 className="ig-escape-title">Ábrelo en tu navegador</h2>
-          <p className="ig-escape-text">
-            Para escribirle a <b>{creatorInfo.creatorName}</b> y ver su
-            respuesta, sal de Instagram. Es rápido:
-          </p>
-
-          <div className="ig-steps">
-            <div className="ig-step">
-              <span className="ig-step-num">1</span>
-              <span>Toca el botón <b>⋯</b> (arriba a la derecha).</span>
-            </div>
-            <div className="ig-step">
-              <span className="ig-step-num">2</span>
-              <span>Elige <b>“Abrir en el navegador”</b>.</span>
-            </div>
-          </div>
-
-          <button className="ig-escape-btn" onClick={handleEscape}>
-            🌐 O intenta abrirlo automáticamente
-          </button>
-
-          {escapeTried && (
-            <p className="ig-escape-manual">
-              Si no se abrió solo, usa los pasos de arriba (toca el <b>⋯</b>).
-            </p>
-          )}
-
-          <button className="ig-escape-stay" onClick={() => setContinueHere(true)}>
-            Continuar aquí de todos modos
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // El anónimo va DIRECTO al formulario (cero fricción), aunque esté dentro de
+  // Instagram. Solo el creador (crear cuenta) necesita salir al navegador real.
 
   // Renderizado Principal
   return (
@@ -152,19 +89,11 @@ export default function PublicUserPage() {
 
       <NotesClothesline publicId={publicId} />
 
-      <a
-        href="/descargar"
-        className="anon-cta"
-        onClick={(e) => {
-          // Detecta el dispositivo y abre la tienda directo si ya está publicada;
-          // si no, deja pasar al /descargar.
-          if (openStore()) e.preventDefault();
-        }}
-      >
+      <a href="/descargar" className="anon-cta">
         <span className="anon-cta-ghost">👻</span>
         <span className="anon-cta-text">
           <b>¿Tú también quieres recibir mensajes anónimos?</b>
-          Descarga GhostMsg y crea tu link gratis
+          Crea tu cuenta gratis
         </span>
         <svg className="anon-cta-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M5 12h14M13 6l6 6-6 6" />
