@@ -5436,3 +5436,95 @@ textarea.form-input-field.attention-pulse {
   filter: brightness(1.12);
   transform: translateY(-1px);
 }
+
+/*
+================================================================================
+|                     PÁGINA DE DESCARGA                                       |
+================================================================================
+*/
+.download-stores {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.download-store {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 18px;
+  border-radius: 14px;
+  text-decoration: none;
+  background: linear-gradient(90deg, #8e2de2, #4a00e0);
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(74, 0, 224, 0.32);
+  transition: transform 0.2s ease, box-shadow 0.25s ease, opacity 0.2s ease;
+}
+
+.download-store:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 26px rgba(74, 0, 224, 0.45);
+}
+
+.download-store.is-soon {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: none;
+  cursor: default;
+  opacity: 0.85;
+}
+
+.download-store.is-soon:hover {
+  transform: none;
+}
+
+.download-store-icon {
+  font-size: 22px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.download-store-text {
+  display: flex;
+  flex-direction: column;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 1.1;
+  text-align: left;
+}
+
+.download-store-text small {
+  font-size: 11px;
+  font-weight: 500;
+  opacity: 0.8;
+}
+
+.download-web {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.download-web span {
+  font-size: 12.5px;
+  color: rgba(235, 235, 245, 0.45);
+  font-family: 'Outfit', sans-serif;
+}
+
+.download-web-link {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: #c9a4ff;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.download-web-link:hover {
+  color: #fff;
+}
