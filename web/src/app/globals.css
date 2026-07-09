@@ -454,6 +454,15 @@ body::after {
   max-width: 600px;
   margin: 0 auto;
   padding: 8px 5px;
+  font-family: 'Outfit', sans-serif;
+}
+
+.dashboard-page-container .inbox-title,
+.dashboard-page-container .chat-item-alias,
+.dashboard-page-container .chat-item-content,
+.dashboard-page-container .chat-item-button,
+.dashboard-page-container .chat-item-avatar {
+  font-family: 'Outfit', sans-serif;
 }
 
 .dashboard-info-container {
@@ -4405,7 +4414,7 @@ textarea.form-input-field.attention-pulse {
   background: linear-gradient(90deg, #8e2de2, #4a00e0);
   border: none;
   color: #fff;
-  font-family: var(--font-main);
+  font-family: 'Outfit', sans-serif;
   font-weight: 700;
   font-size: 14px;
   cursor: pointer;
@@ -4507,7 +4516,8 @@ textarea.form-input-field.attention-pulse {
   border-radius: 12px;
   color: #fff;
   font-size: 15px;
-  font-family: var(--font-main);
+  font-family: 'Outfit', sans-serif;
+  font-weight: 500;
   outline: none;
   box-sizing: border-box;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
@@ -4538,7 +4548,7 @@ textarea.form-input-field.attention-pulse {
   border-radius: 12px;
   background: linear-gradient(90deg, #8e2de2, #4a00e0);
   color: #fff;
-  font-family: var(--font-main);
+  font-family: 'Outfit', sans-serif;
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;
