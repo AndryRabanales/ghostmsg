@@ -5603,27 +5603,84 @@ textarea.form-input-field.attention-pulse {
   font-size: 14.5px;
   line-height: 1.6;
   color: rgba(235, 235, 245, 0.65);
-  margin: 0 0 24px;
+  margin: 0 0 20px;
+}
+
+/* Pasos manuales (método confiable) */
+.ig-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: left;
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 18px;
+}
+
+.ig-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14.5px;
+  line-height: 1.4;
+  color: #fff;
+}
+
+.ig-step-num {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 14px;
+  color: #fff;
+  background: linear-gradient(135deg, #8e2de2, #4a00e0);
+}
+
+/* Flecha animada apuntando al menú ⋯ de Instagram (arriba a la derecha) */
+.ig-point {
+  position: fixed;
+  top: 8px;
+  right: 12px;
+  z-index: 300;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #8e2de2, #4a00e0);
+  color: #fff;
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 6px 18px rgba(74, 0, 224, 0.5);
+  animation: ig-point-bounce 1.2s ease-in-out infinite;
+}
+
+@keyframes ig-point-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
 }
 
 .ig-escape-btn {
   width: 100%;
-  padding: 16px;
-  border: none;
+  padding: 13px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 14px;
-  background: linear-gradient(90deg, #8e2de2, #4a00e0);
-  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(235, 235, 245, 0.85);
   font-family: 'Outfit', sans-serif;
-  font-size: 16px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 8px 22px rgba(74, 0, 224, 0.4);
-  transition: transform 0.15s ease, box-shadow 0.25s ease;
+  transition: background 0.2s ease, border-color 0.2s ease;
 }
 
 .ig-escape-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 28px rgba(74, 0, 224, 0.5);
+  background: rgba(142, 45, 226, 0.15);
+  border-color: rgba(201, 164, 255, 0.4);
 }
 
 .ig-escape-manual {

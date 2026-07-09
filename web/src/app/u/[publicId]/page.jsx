@@ -96,22 +96,35 @@ export default function PublicUserPage() {
   if (inApp && !continueHere) {
     return (
       <div className="anon-page-wrap">
+        {/* Flecha animada apuntando al menú ⋯ de Instagram (arriba a la derecha) */}
+        <div className="ig-point">Toca aquí ⋯</div>
+
         <div className="ig-escape-card">
           <div className="ig-escape-icon">🌐</div>
           <h2 className="ig-escape-title">Ábrelo en tu navegador</h2>
           <p className="ig-escape-text">
-            Estás dentro de <b>Instagram</b>. Para escribirle a{" "}
-            <b>{creatorInfo.creatorName}</b> y poder ver su respuesta después,
-            ábrelo en tu navegador.
+            Para escribirle a <b>{creatorInfo.creatorName}</b> y ver su
+            respuesta, sal de Instagram. Es rápido:
           </p>
+
+          <div className="ig-steps">
+            <div className="ig-step">
+              <span className="ig-step-num">1</span>
+              <span>Toca el botón <b>⋯</b> (arriba a la derecha).</span>
+            </div>
+            <div className="ig-step">
+              <span className="ig-step-num">2</span>
+              <span>Elige <b>“Abrir en el navegador”</b>.</span>
+            </div>
+          </div>
+
           <button className="ig-escape-btn" onClick={handleEscape}>
-            🌐 Abrir en mi navegador
+            🌐 O intenta abrirlo automáticamente
           </button>
 
           {escapeTried && (
             <p className="ig-escape-manual">
-              ¿No se abrió? Toca <b>⋯</b> (arriba a la derecha) y elige{" "}
-              <b>“Abrir en el navegador”</b>.
+              Si no se abrió solo, usa los pasos de arriba (toca el <b>⋯</b>).
             </p>
           )}
 
