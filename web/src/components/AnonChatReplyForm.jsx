@@ -3,7 +3,7 @@ import { useState } from "react";
 
 const API = process.env.NEXT_PUBLIC_API || "https://api.ghostmsg.space";
 
-export default function AnonChatReplyForm({ anonToken, chatId, onMessageSent }) {
+export default function AnonChatReplyForm({ anonToken, chatId, creatorName, onMessageSent }) {
     const [newMsg, setNewMsg] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -78,7 +78,7 @@ export default function AnonChatReplyForm({ anonToken, chatId, onMessageSent }) 
                         type="text"
                         value={newMsg}
                         onChange={(e) => setNewMsg(e.target.value)}
-                        placeholder="Escribe tu mensaje aquí..."
+                        placeholder={creatorName ? `Enviar mensaje nuevo a ${creatorName}...` : "Escribe tu mensaje aquí..."}
                         className="premium-input"
                         disabled={loading}
                     />

@@ -25,10 +25,12 @@ const CountdownTimer = ({ expiresAt, onExpire }) => {
         clearInterval(interval);
         if (onExpire) onExpire();
       } else {
-        const totalMinutes = Math.floor(diff / 60000).toString().padStart(2, '0');
-        const seconds = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
-        setTimeLeft(`${totalMinutes}:${seconds}`);
-        setIsCritical(diff < 5 * 60000);
+        // Formato por día: HORAS:MINUTOS (ej. 24:00, 23:59...)
+        const totalMinutes = Math.ceil(diff / 60000);
+        const hours = Math.floor(totalMinutes / 60).toString().padStart(2, '0');
+        const minutes = (totalMinutes % 60).toString().padStart(2, '0');
+        setTimeLeft(`${hours}:${minutes}`);
+        setIsCritical(diff < 60 * 60000);
       }
     }, 1000);
     return () => clearInterval(interval);
@@ -223,25 +225,6 @@ export default function PublicChatPage() {
     setMessages([]);
   }, []);
 
-  const handleAbandon = async () => {
-    if (!confirm("¿Seguro que quieres abandonar este chat? Se borrará PERMANENTEMENTE para ambos.")) return;
-    try {
-      setLoading(true);
-      await fetch(`${API}/chats/${anonToken}/${chatId}`, { method: 'DELETE' });
-      // Borra solo ESTE chat, conservando los demás.
-      try {
-        const rest = JSON.parse(localStorage.getItem("myChats") || "[]")
-          .filter((c) => c.chatId !== chatId);
-        localStorage.setItem("myChats", JSON.stringify(rest));
-      } catch { /* noop */ }
-      window.location.href = creatorPublicId ? `/u/${creatorPublicId}` : "/";
-    } catch (e) {
-      console.error(e);
-      alert("Error al abandonar el chat.");
-      setLoading(false);
-    }
-  };
-
   const Message = ({ msg, creatorName }) => {
     const isCreator = msg.from === "creator";
     const senderName = isCreator ? creatorName : (anonAlias || "Tú");
@@ -313,10 +296,6 @@ export default function PublicChatPage() {
           </div>
           <div className="premium-chat-header-actions">
             <CountdownTimer expiresAt={expiresAt} onExpire={handleExpire} />
-            <button onClick={handleAbandon} className="premium-abandon-btn">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
-              <span>Abandonar</span>
-            </button>
           </div>
         </div>
 
@@ -340,6 +319,7 @@ export default function PublicChatPage() {
           <AnonChatReplyForm
             anonToken={anonToken}
             chatId={chatId}
+            creatorName={creatorName}
             onMessageSent={(newMsg) => setMessages(prev => [...prev, newMsg])}
           />
         </div>
