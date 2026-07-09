@@ -16,6 +16,7 @@ export default function CollageBoard({ dashboardId, creatorName, onClose }) {
   const [positions, setPositions] = useState({}); // { id: {x,y,z} }
   const [archived, setArchived] = useState({});   // { id: true }
   const [showArchived, setShowArchived] = useState(false);
+  const [contentH, setContentH] = useState(500);
 
   const boardRef = useRef(null);
   const noteRefs = useRef({});
@@ -96,6 +97,18 @@ export default function CollageBoard({ dashboardId, creatorName, onClose }) {
   const persistArch = (next) => {
     try { localStorage.setItem(archKey, JSON.stringify(next)); } catch {}
   };
+
+  // Altura del contenido para que el board pueda hacer scroll (notas absolutas).
+  useEffect(() => {
+    let maxBottom = 0;
+    notes.forEach((n) => {
+      if (archived[n.id]) return;
+      const pos = positions[n.id];
+      const el = noteRefs.current[n.id];
+      if (pos && el) maxBottom = Math.max(maxBottom, pos.y + el.offsetHeight);
+    });
+    setContentH(maxBottom + 48);
+  }, [positions, notes, archived]);
 
   const bringToFront = (id) => {
     zTop.current += 1;
@@ -255,6 +268,7 @@ export default function CollageBoard({ dashboardId, creatorName, onClose }) {
             </div>
           );
         })}
+        <div className="collage-board-spacer" style={{ height: contentH }} />
       </div>
 
       {showArchived && (

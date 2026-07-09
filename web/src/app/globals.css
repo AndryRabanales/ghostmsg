@@ -5096,11 +5096,18 @@ textarea.form-input-field.attention-pulse {
   min-height: 0;
   position: relative;
   margin: 6px 12px 12px;
-  overflow: hidden;
-  touch-action: none;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
   border-radius: 18px;
   border: 1px dashed rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.015);
+}
+
+.collage-board-spacer {
+  width: 1px;
+  pointer-events: none;
 }
 
 .collage-note {
