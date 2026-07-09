@@ -23,6 +23,7 @@ export default function CollageBoard({ dashboardId, creatorName, onClose }) {
   const laidOut = useRef(false);
   const zTop = useRef(20);
   const drag = useRef(null);
+  const rotate = useRef(null);
 
   const posKey = `gm_collage_pos_${dashboardId}`;
   const archKey = `gm_collage_arch_${dashboardId}`;
@@ -71,14 +72,14 @@ export default function CollageBoard({ dashboardId, creatorName, onClose }) {
     const next = { ...saved };
     let z = 10;
 
-    notes.forEach((n) => {
+    notes.forEach((n, idx) => {
       if (saved[n.id]) return; // respeta lo que el usuario ya movió
       // columna más corta
       let c = 0;
       for (let i = 1; i < cols; i++) if (colH[i] < colH[c]) c = i;
       const el = noteRefs.current[n.id];
       const h = el ? el.offsetHeight : 96;
-      next[n.id] = { x: startX + c * (NOTE_W + GAP), y: colH[c], z: z++ };
+      next[n.id] = { x: startX + c * (NOTE_W + GAP), y: colH[c], z: z++, r: TILTS[idx % TILTS.length] };
       colH[c] += h + GAP;
     });
 
@@ -128,6 +129,37 @@ export default function CollageBoard({ dashboardId, creatorName, onClose }) {
     }
   };
 
+  // --- Rotación con manejador (handle) ---
+  const onRotateDown = (e, id) => {
+    e.stopPropagation();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    const el = noteRefs.current[id];
+    const rect = el.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const startAngle = Math.atan2(e.clientY - cy, e.clientX - cx) * (180 / Math.PI);
+    const cur = positions[id] || {};
+    rotate.current = { id, cx, cy, startAngle, origR: cur.r ?? 0 };
+    bringToFront(id);
+  };
+
+  const onRotateMove = (e) => {
+    const r = rotate.current;
+    if (!r) return;
+    e.stopPropagation();
+    const angle = Math.atan2(e.clientY - r.cy, e.clientX - r.cx) * (180 / Math.PI);
+    const nextR = r.origR + (angle - r.startAngle);
+    setPositions((p) => ({ ...p, [r.id]: { ...p[r.id], r: nextR } }));
+  };
+
+  const onRotateUp = (e) => {
+    if (rotate.current) {
+      e.stopPropagation();
+      rotate.current = null;
+      setPositions((p) => { persistPos(p); return p; });
+    }
+  };
+
   const archiveNote = (e, id) => {
     e.preventDefault();
     e.stopPropagation();
@@ -165,7 +197,7 @@ export default function CollageBoard({ dashboardId, creatorName, onClose }) {
 
       <div className="collage-header">
         <h2 className="collage-title">Mensajes anónimos para {creatorName}</h2>
-        <p className="collage-hint">✋ Puedes arrastrar las notas a tu gusto · 📸 captura para tu historia</p>
+        <p className="collage-hint">✋ Arrastra y gira las notas a tu gusto · 📸 captura para tu historia</p>
       </div>
 
       {loading && <p className="collage-state">Armando tu collage…</p>}
@@ -183,6 +215,7 @@ export default function CollageBoard({ dashboardId, creatorName, onClose }) {
       >
         {visible.map((note, i) => {
           const p = positions[note.id] || { x: 0, y: 0, z: 10 };
+          const rot = p.r ?? TILTS[i % TILTS.length];
           return (
             <div
               key={note.id}
@@ -191,7 +224,7 @@ export default function CollageBoard({ dashboardId, creatorName, onClose }) {
               onPointerDown={(e) => onPointerDown(e, note.id)}
               style={{
                 left: 0, top: 0,
-                transform: `translate(${p.x}px, ${p.y}px) rotate(${TILTS[i % TILTS.length]}deg)`,
+                transform: `translate(${p.x}px, ${p.y}px) rotate(${rot}deg)`,
                 zIndex: p.z,
               }}
             >
@@ -207,6 +240,18 @@ export default function CollageBoard({ dashboardId, creatorName, onClose }) {
               </button>
               <p className="collage-note-text">{note.content}</p>
               <span className="collage-note-alias">— {note.alias}</span>
+              <button
+                className="collage-note-rotate"
+                onPointerDown={(e) => onRotateDown(e, note.id)}
+                onPointerMove={onRotateMove}
+                onPointerUp={onRotateUp}
+                aria-label="Rotar"
+                title="Rotar"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M23 4v6h-6" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                </svg>
+              </button>
             </div>
           );
         })}
