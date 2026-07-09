@@ -4621,7 +4621,7 @@ textarea.form-input-field.attention-pulse {
   max-width: 320px;
 }
 
-.share-modal-cta {
+.share-copy-hero {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -4636,112 +4636,116 @@ textarea.form-input-field.attention-pulse {
   font-size: 15.5px;
   font-weight: 700;
   cursor: pointer;
-  margin-bottom: 16px;
-  transition: transform 0.15s ease, box-shadow 0.25s ease;
+  transition: transform 0.15s ease, box-shadow 0.25s ease, background 0.3s ease;
   box-shadow: 0 8px 22px rgba(74, 0, 224, 0.35);
 }
 
-.share-modal-cta:hover {
+.share-copy-hero:hover {
   transform: translateY(-2px);
   box-shadow: 0 12px 28px rgba(74, 0, 224, 0.45);
 }
 
-.share-modal-networks {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin-bottom: 20px;
+.share-copy-hero.is-copied {
+  background: linear-gradient(90deg, #2ecc71, #17a568);
+  box-shadow: 0 8px 22px rgba(23, 165, 104, 0.35);
 }
 
-.share-net {
+.share-link-preview {
+  margin: 10px 0 22px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: rgba(235, 235, 245, 0.45);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.share-steps {
   display: flex;
   flex-direction: column;
+  gap: 12px;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
+  padding: 16px 16px 16px 14px;
+}
+
+.share-step {
+  display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 13px 6px;
-  border-radius: 14px;
+  gap: 12px;
+}
+
+.share-step-num {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-main);
+  font-weight: 800;
+  font-size: 13px;
+  color: #fff;
+  background: linear-gradient(135deg, #8e2de2, #4a00e0);
+  box-shadow: 0 3px 10px rgba(74, 0, 224, 0.35);
+}
+
+.share-step-text {
+  font-size: 13.5px;
+  line-height: 1.4;
+  color: rgba(235, 235, 245, 0.85);
+}
+
+.share-alt-label {
+  margin: 20px 0 12px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: rgba(235, 235, 245, 0.35);
+}
+
+.share-alt-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.share-alt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 11px;
+  border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.04);
   color: rgba(235, 235, 245, 0.85);
   font-family: var(--font-main);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
 }
 
-.share-net-icon {
-  font-size: 22px;
+.share-alt-icon {
+  font-size: 16px;
   line-height: 1;
 }
 
-.share-net:hover {
-  transform: translateY(-3px);
+.share-alt:hover {
+  transform: translateY(-2px);
 }
 
-.share-net--ig:hover {
-  border-color: #e1306c;
-  background: rgba(225, 48, 108, 0.14);
-}
-
-.share-net--wa:hover {
+.share-alt--wa:hover {
   border-color: #25d366;
   background: rgba(37, 211, 102, 0.14);
 }
 
-.share-net--fb:hover {
+.share-alt--fb:hover {
   border-color: #1877f2;
   background: rgba(24, 119, 242, 0.14);
-}
-
-.share-modal-linkrow {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  padding: 7px 7px 7px 14px;
-}
-
-.share-modal-linkinput {
-  flex: 1;
-  min-width: 0;
-  background: transparent;
-  border: none;
-  outline: none;
-  color: rgba(235, 235, 245, 0.7);
-  font-family: var(--font-mono);
-  font-size: 12.5px;
-  text-overflow: ellipsis;
-}
-
-.share-modal-copy {
-  flex-shrink: 0;
-  padding: 8px 15px;
-  border: none;
-  border-radius: 9px;
-  background: linear-gradient(90deg, #8e2de2, #4a00e0);
-  color: #fff;
-  font-family: var(--font-main);
-  font-size: 12.5px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: filter 0.2s ease;
-}
-
-.share-modal-copy:hover {
-  filter: brightness(1.12);
-}
-
-.share-modal-toast {
-  margin-top: 14px;
-  font-size: 12.5px;
-  line-height: 1.5;
-  color: #b9ffcf;
-  background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.3);
-  border-radius: 12px;
-  padding: 10px 14px;
-  animation: fadeInUp 0.3s ease forwards;
 }

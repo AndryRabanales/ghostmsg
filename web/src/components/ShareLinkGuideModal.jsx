@@ -4,64 +4,38 @@ import React, { useEffect, useState } from "react";
 
 const SHARE_TEXT = "Mándame un mensaje anónimo 👻 — dime lo que piensas de mí, nadie sabrá que fuiste tú.";
 
+const STEPS = [
+  { n: "1", text: "Copia tu link con el botón de arriba." },
+  { n: "2", text: "Abre Instagram y crea una Historia con tu foto." },
+  { n: "3", text: "Toca el sticker “Enlace” 🔗 y pega tu link." },
+  { n: "4", text: "Publica y espera tus mensajes anónimos." },
+];
+
 export default function ShareLinkGuideModal({ onClose, publicLink }) {
-  const [copyText, setCopyText] = useState("Copiar");
-  const [toast, setToast] = useState("");
-  const [canNativeShare, setCanNativeShare] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    setCanNativeShare(typeof navigator !== "undefined" && !!navigator.share);
     const handleKeyDown = (e) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
 
-  const showToast = (msg) => {
-    setToast(msg);
-    setTimeout(() => setToast(""), 2600);
-  };
-
-  const copyLink = async () => {
+  const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(publicLink);
-      return true;
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
     } catch {
-      return false;
+      /* algunos navegadores bloquean clipboard sin gesto seguro */
     }
-  };
-
-  const handleCopyButton = async () => {
-    if (await copyLink()) {
-      setCopyText("¡Copiado!");
-      setTimeout(() => setCopyText("Copiar"), 2000);
-    } else {
-      setCopyText("Error");
-    }
-  };
-
-  const handleNativeShare = async () => {
-    try {
-      await navigator.share({ title: "GhostMsg", text: SHARE_TEXT, url: publicLink });
-    } catch {
-      /* usuario canceló */
-    }
-  };
-
-  const handleInstagram = async () => {
-    await copyLink();
-    showToast("Link copiado. Abre tu Historia, ponle tu foto y pégalo con el sticker de Enlace 🔗");
-    // Abre la cámara de Historias de Instagram (si la app está instalada).
-    window.location.href = "instagram://story-camera";
   };
 
   const handleWhatsApp = () => {
-    const url = `https://wa.me/?text=${encodeURIComponent(`${SHARE_TEXT} ${publicLink}`)}`;
-    window.open(url, "_blank");
+    window.open(`https://wa.me/?text=${encodeURIComponent(`${SHARE_TEXT} ${publicLink}`)}`, "_blank");
   };
 
   const handleFacebook = () => {
-    const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(publicLink)}`;
-    window.open(url, "_blank");
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(publicLink)}`, "_blank");
   };
 
   return (
@@ -70,42 +44,51 @@ export default function ShareLinkGuideModal({ onClose, publicLink }) {
         <button className="share-modal-close" onClick={onClose} aria-label="Cerrar">✕</button>
 
         <div className="share-modal-emoji">👻</div>
-        <h2 className="share-modal-title">Recibe mensajes anónimos</h2>
+        <h2 className="share-modal-title">Comparte tu link</h2>
         <p className="share-modal-sub">
-          Comparte tu link en tu <b>historia</b>. Quien lo toque podrá escribirte de forma
-          100% anónima. Solo súbelo con tu foto y el sticker de enlace.
+          Súbelo a tu <b>historia de Instagram</b> para recibir mensajes anónimos.
+          Solo hay que copiarlo y pegarlo.
         </p>
 
-        {canNativeShare && (
-          <button className="share-modal-cta" onClick={handleNativeShare}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" /><polyline points="16 6 12 2 8 6" /><line x1="12" y1="2" x2="12" y2="15" />
-            </svg>
-            Compartir en mis redes
-          </button>
-        )}
+        {/* Paso principal: copiar */}
+        <button
+          className={`share-copy-hero ${copied ? "is-copied" : ""}`}
+          onClick={handleCopy}
+        >
+          {copied ? (
+            <>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+              ¡Link copiado!
+            </>
+          ) : (
+            <>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+              Copiar mi link
+            </>
+          )}
+        </button>
+        <div className="share-link-preview">{publicLink}</div>
 
-        <div className="share-modal-networks">
-          <button className="share-net share-net--ig" onClick={handleInstagram}>
-            <span className="share-net-icon">📸</span>
-            Instagram
-          </button>
-          <button className="share-net share-net--wa" onClick={handleWhatsApp}>
-            <span className="share-net-icon">💬</span>
-            WhatsApp
-          </button>
-          <button className="share-net share-net--fb" onClick={handleFacebook}>
-            <span className="share-net-icon">👥</span>
-            Facebook
-          </button>
+        {/* Guía paso a paso */}
+        <div className="share-steps">
+          {STEPS.map((s) => (
+            <div className="share-step" key={s.n}>
+              <span className="share-step-num">{s.n}</span>
+              <span className="share-step-text">{s.text}</span>
+            </div>
+          ))}
         </div>
 
-        <div className="share-modal-linkrow">
-          <input type="text" value={publicLink} readOnly className="share-modal-linkinput" />
-          <button className="share-modal-copy" onClick={handleCopyButton}>{copyText}</button>
+        {/* Alternativas que sí llevan el link listo */}
+        <div className="share-alt-label">o compártelo por</div>
+        <div className="share-alt-row">
+          <button className="share-alt share-alt--wa" onClick={handleWhatsApp}>
+            <span className="share-alt-icon">💬</span> WhatsApp
+          </button>
+          <button className="share-alt share-alt--fb" onClick={handleFacebook}>
+            <span className="share-alt-icon">👥</span> Facebook
+          </button>
         </div>
-
-        {toast && <div className="share-modal-toast">{toast}</div>}
       </div>
     </div>
   );
