@@ -148,10 +148,14 @@ export default function AnonMessageForm({
           anonToken: data.anonToken,
           anonAlias: alias.trim() ? alias.trim() : "Anónimo",
           creatorName: creatorName || "Creador",
+          publicId,
           hasNewReply: false,
           timestamp: new Date().toISOString()
         };
-        localStorage.setItem("myChats", JSON.stringify([newChat]));
+        // Añade el nuevo chat SIN borrar los anteriores (soporte multi-chat).
+        const existing = JSON.parse(localStorage.getItem("myChats") || "[]");
+        const filtered = existing.filter((c) => c.chatId !== newChat.chatId);
+        localStorage.setItem("myChats", JSON.stringify([newChat, ...filtered]));
       } catch (e) {
         console.error("Error guardando chat en myChats:", e);
       }

@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { timeAgo } from "@/utils/timeAgo";
 import AnonChatReplyForm from "@/components/AnonChatReplyForm";
 import NotifyMeButton from "@/components/NotifyMeButton";
+import AnonChatsBadge from "@/components/AnonChatsBadge";
 import { useViewportHeight } from "@/hooks/useViewportHeight";
 import { formatMessageTime } from "@/utils/formatMessageTime";
 
@@ -227,7 +228,12 @@ export default function PublicChatPage() {
     try {
       setLoading(true);
       await fetch(`${API}/chats/${anonToken}/${chatId}`, { method: 'DELETE' });
-      localStorage.removeItem("myChats");
+      // Borra solo ESTE chat, conservando los demás.
+      try {
+        const rest = JSON.parse(localStorage.getItem("myChats") || "[]")
+          .filter((c) => c.chatId !== chatId);
+        localStorage.setItem("myChats", JSON.stringify(rest));
+      } catch { /* noop */ }
       window.location.href = creatorPublicId ? `/u/${creatorPublicId}` : "/";
     } catch (e) {
       console.error(e);
@@ -284,6 +290,7 @@ export default function PublicChatPage() {
 
   return (
     <div className="premium-chat-layout">
+      <AnonChatsBadge newMessagePublicId={creatorPublicId} currentChatId={chatId} />
       <div className="premium-chat-container">
 
         <div className="premium-chat-header">

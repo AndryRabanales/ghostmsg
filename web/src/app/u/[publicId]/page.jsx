@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import AnonMessageForm from "@/components/AnonMessageForm";
+import AnonChatsBadge from "@/components/AnonChatsBadge";
 import { tryEscapeToRealBrowser } from "@/utils/inAppBrowser";
 
 const API = process.env.NEXT_PUBLIC_API || "https://api.ghostmsg.space";
@@ -80,6 +81,7 @@ export default function PublicUserPage() {
   // Renderizado Principal
   return (
     <div className="anon-page-wrap">
+      <AnonChatsBadge newMessagePublicId={publicId} />
       <AnonMessageForm
         publicId={publicId}
         onChatCreated={handleChatCreated}
