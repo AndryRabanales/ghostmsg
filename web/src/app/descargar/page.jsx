@@ -1,10 +1,7 @@
 // src/app/descargar/page.jsx
 "use client";
 import Link from "next/link";
-
-// Cuando publiques la app, pon aquí las URLs reales de las tiendas.
-const APP_STORE_URL = "";
-const PLAY_STORE_URL = "";
+import { APP_STORE_URL, PLAY_STORE_URL } from "@/utils/appStore";
 
 export default function DescargarPage() {
   return (

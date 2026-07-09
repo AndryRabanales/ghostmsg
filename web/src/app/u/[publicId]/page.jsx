@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import AnonMessageForm from "@/components/AnonMessageForm";
 import AnonChatsBadge from "@/components/AnonChatsBadge";
 import { tryEscapeToRealBrowser } from "@/utils/inAppBrowser";
+import { openStore } from "@/utils/appStore";
 
 const API = process.env.NEXT_PUBLIC_API || "https://api.ghostmsg.space";
 
@@ -91,7 +92,15 @@ export default function PublicUserPage() {
         avatarUrl={creatorInfo.avatarUrl}
       />
 
-      <a href="/descargar" className="anon-cta">
+      <a
+        href="/descargar"
+        className="anon-cta"
+        onClick={(e) => {
+          // Detecta el dispositivo y abre la tienda directo si ya está publicada;
+          // si no, deja pasar al /descargar.
+          if (openStore()) e.preventDefault();
+        }}
+      >
         <span className="anon-cta-ghost">👻</span>
         <span className="anon-cta-text">
           <b>¿Tú también quieres recibir mensajes anónimos?</b>
