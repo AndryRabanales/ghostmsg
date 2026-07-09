@@ -4,7 +4,6 @@ import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { timeAgo } from "@/utils/timeAgo";
 import AnonChatReplyForm from "@/components/AnonChatReplyForm";
-import NotifyMeButton from "@/components/NotifyMeButton";
 import AnonChatsBadge from "@/components/AnonChatsBadge";
 import { useViewportHeight } from "@/hooks/useViewportHeight";
 import { formatMessageTime } from "@/utils/formatMessageTime";
@@ -304,8 +303,6 @@ export default function PublicChatPage() {
             <CountdownTimer expiresAt={expiresAt} onExpire={handleExpire} />
           </div>
         </div>
-
-        <NotifyMeButton anonToken={anonToken} chatId={chatId} />
 
         <div className="return-reminder">
           <span className="return-reminder-text">
