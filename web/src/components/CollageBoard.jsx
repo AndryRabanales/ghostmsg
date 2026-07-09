@@ -146,12 +146,40 @@ export default function CollageBoard({ dashboardId, creatorName, onClose }) {
     setPositions(next);
     try { localStorage.setItem(posKey, JSON.stringify(next)); } catch {}
     laidOut.current = true;
+    persistOrder(next); // guarda el orden inicial en el servidor
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, notes, boardW]);
 
   const persistPos = useCallback((next) => {
     try { localStorage.setItem(posKey, JSON.stringify(next)); } catch {}
   }, [posKey]);
+
+  // Deriva el orden de lectura del collage (arriba→abajo, izquierda→derecha)
+  // y lo guarda en el servidor para que el tendedero público lo respete.
+  const orderTimer = useRef(null);
+  const orderedIdsFrom = (pos, arch = archived) =>
+    notes
+      .filter((n) => !arch[n.id])
+      .map((n) => ({ id: n.id, y: pos[n.id]?.y ?? 0, fx: pos[n.id]?.fx ?? 0 }))
+      .sort((a, b) => {
+        const ba = Math.floor(a.y / 60), bb = Math.floor(b.y / 60); // bandas de fila
+        if (ba !== bb) return ba - bb;
+        return a.fx - b.fx;
+      })
+      .map((o) => o.id);
+
+  const persistOrder = (pos, arch = archived) => {
+    const ids = orderedIdsFrom(pos, arch);
+    if (ids.length === 0) return;
+    if (orderTimer.current) clearTimeout(orderTimer.current);
+    orderTimer.current = setTimeout(() => {
+      fetch(`${API}/dashboard/${dashboardId}/collage/order`, {
+        method: "PUT",
+        headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ ids }),
+      }).catch(() => {});
+    }, 700);
+  };
 
   const persistArch = (next) => {
     try { localStorage.setItem(archKey, JSON.stringify(next)); } catch {}
@@ -200,7 +228,7 @@ export default function CollageBoard({ dashboardId, creatorName, onClose }) {
   const onPointerUp = () => {
     if (drag.current) {
       drag.current = null;
-      setPositions((p) => { persistPos(p); return p; });
+      setPositions((p) => { persistPos(p); persistOrder(p); return p; });
     }
   };
 
@@ -251,6 +279,7 @@ export default function CollageBoard({ dashboardId, creatorName, onClose }) {
     setArchived(next);
     persistArch(next);
     persistHidden(id, true);
+    persistOrder(positions, next); // reordena el tendedero sin la archivada
   };
 
   const restoreNote = (id) => {
@@ -259,6 +288,7 @@ export default function CollageBoard({ dashboardId, creatorName, onClose }) {
     setArchived(next);
     persistArch(next);
     persistHidden(id, false);
+    persistOrder(positions, next);
   };
 
   const visible = notes.filter((n) => !archived[n.id]);
