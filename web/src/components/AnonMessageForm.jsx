@@ -254,7 +254,7 @@ export default function AnonMessageForm({
               value={content}
               onChange={(e) => { setContent(e.target.value); setCharCount(e.target.value.length); }}
               className="form-input-field attention-pulse"
-              rows="4"
+              rows="3"
               maxLength="500"
             ></textarea>
           </div>

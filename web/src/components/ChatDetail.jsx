@@ -46,20 +46,23 @@ const CountdownTimer = ({ expiresAt, onExpire }) => {
 
   useEffect(() => {
     if (!expiresAt) return;
-    const interval = setInterval(() => {
-      const now = new Date();
-      const diff = new Date(expiresAt) - now;
+    const tick = () => {
+      const diff = new Date(expiresAt) - new Date();
       if (diff <= 0) {
-        setTimeLeft("00:00");
-        clearInterval(interval);
+        setTimeLeft("00:00:00");
         if (onExpire) onExpire();
-      } else {
-        const totalMinutes = Math.floor(diff / 60000).toString().padStart(2, '0');
-        const seconds = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
-        setTimeLeft(`${totalMinutes}:${seconds}`);
-        setIsCritical(diff < 5 * 60000);
+        return false;
       }
-    }, 1000);
+      const totalSeconds = Math.floor(diff / 1000);
+      const hours = Math.floor(totalSeconds / 3600).toString().padStart(2, '0');
+      const minutes = Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, '0');
+      const seconds = (totalSeconds % 60).toString().padStart(2, '0');
+      setTimeLeft(`${hours}:${minutes}:${seconds}`);
+      setIsCritical(diff < 60 * 60000);
+      return true;
+    };
+    tick();
+    const interval = setInterval(() => { if (!tick()) clearInterval(interval); }, 1000);
     return () => clearInterval(interval);
   }, [expiresAt, onExpire]);
 

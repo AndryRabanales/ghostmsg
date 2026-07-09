@@ -1,13 +1,25 @@
 // src/components/CollageBoard.jsx
 "use client";
 import { useEffect, useLayoutEffect, useRef, useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { getAuthHeaders } from "@/utils/auth";
 
 const API = process.env.NEXT_PUBLIC_API || "https://api.ghostmsg.space";
 
 const TILTS = [-4, 3, -2, 4, -3, 2, -1.5, 3.5, -4.5, 1.5, -2.5, 4.5];
-const NOTE_W = 150;
-const GAP = 12;
+
+// Métricas responsive: en móvil las notas se achican para caber 3-4 por fila;
+// en escritorio se mantienen grandes.
+function metricsFor(boardW) {
+  if (!boardW) return { noteW: 150, gap: 12 };
+  if (boardW <= 520) {
+    const gap = 8;
+    const targetCols = boardW < 330 ? 3 : 4;
+    const noteW = Math.floor((boardW - (targetCols - 1) * gap) / targetCols);
+    return { noteW, gap };
+  }
+  return { noteW: 150, gap: 12 };
+}
 
 export default function CollageBoard({ dashboardId, creatorName, onClose }) {
   const [notes, setNotes] = useState([]);
@@ -17,6 +29,19 @@ export default function CollageBoard({ dashboardId, creatorName, onClose }) {
   const [archived, setArchived] = useState({});   // { id: true }
   const [showArchived, setShowArchived] = useState(false);
   const [contentH, setContentH] = useState(500);
+  const [mounted, setMounted] = useState(false);
+  const [boardW, setBoardW] = useState(0);
+
+  const { noteW, gap } = metricsFor(boardW);
+
+  // El overlay se monta en document.body (portal) para cubrir TODA la pantalla,
+  // sin que ningún ancestro con transform/filter recorte el position:fixed.
+  useEffect(() => {
+    setMounted(true);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prevOverflow; };
+  }, []);
 
   const boardRef = useRef(null);
   const noteRefs = useRef({});
@@ -26,8 +51,22 @@ export default function CollageBoard({ dashboardId, creatorName, onClose }) {
   const drag = useRef(null);
   const rotate = useRef(null);
 
-  const posKey = `gm_collage_pos_${dashboardId}`;
+  // v2: posiciones guardadas de forma relativa (fx 0..1) para ser convertibles
+  // entre PC y móvil. La clave nueva ignora el formato viejo (px absolutos).
+  const posKey = `gm_collage_pos_v2_${dashboardId}`;
   const archKey = `gm_collage_arch_${dashboardId}`;
+
+  // Mide el ancho del board y lo actualiza al redimensionar / rotar el móvil.
+  useEffect(() => {
+    const measure = () => { if (boardRef.current) setBoardW(boardRef.current.clientWidth); };
+    measure();
+    window.addEventListener("resize", measure);
+    window.addEventListener("orientationchange", measure);
+    return () => {
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("orientationchange", measure);
+    };
+  }, [mounted]);
 
   // --- Cargar notas + estado guardado ---
   useEffect(() => {
@@ -46,6 +85,13 @@ export default function CollageBoard({ dashboardId, creatorName, onClose }) {
         if (!res.ok) throw new Error("No se pudo cargar el collage.");
         const data = await res.json();
         zTop.current = 20 + data.length;
+        // El servidor es la fuente de verdad del archivado (para que también
+        // se oculten del tendedero público). Unimos con lo local por si acaso.
+        const serverArch = {};
+        data.forEach((n) => { if (n.hidden) serverArch[n.id] = true; });
+        const merged = { ...savedArch, ...serverArch };
+        setArchived(merged);
+        try { localStorage.setItem(archKey, JSON.stringify(merged)); } catch {}
         setNotes(data);
       } catch (err) {
         setError(err.message);
@@ -59,15 +105,13 @@ export default function CollageBoard({ dashboardId, creatorName, onClose }) {
 
   // --- Layout ordenado (masonry) por defecto, midiendo alturas reales ---
   useLayoutEffect(() => {
-    if (loading || notes.length === 0 || laidOut.current) return;
-    const board = boardRef.current;
-    if (!board) return;
+    if (loading || notes.length === 0 || laidOut.current || !boardW) return;
 
-    const boardW = board.clientWidth;
-    const cols = Math.max(1, Math.floor((boardW + GAP) / (NOTE_W + GAP)));
-    const gridW = cols * NOTE_W + (cols - 1) * GAP;
+    const cols = Math.max(1, Math.floor((boardW + gap) / (noteW + gap)));
+    const gridW = cols * noteW + (cols - 1) * gap;
     const startX = Math.max(8, (boardW - gridW) / 2);
-    const colH = new Array(cols).fill(GAP);
+    const colH = new Array(cols).fill(gap);
+    const usable = Math.max(1, boardW - noteW); // rango horizontal para fx
 
     const saved = savedPosRef.current || {};
     const next = { ...saved };
@@ -80,15 +124,16 @@ export default function CollageBoard({ dashboardId, creatorName, onClose }) {
       for (let i = 1; i < cols; i++) if (colH[i] < colH[c]) c = i;
       const el = noteRefs.current[n.id];
       const h = el ? el.offsetHeight : 96;
-      next[n.id] = { x: startX + c * (NOTE_W + GAP), y: colH[c], z: z++, r: TILTS[idx % TILTS.length] };
-      colH[c] += h + GAP;
+      const xPx = startX + c * (noteW + gap);
+      next[n.id] = { fx: xPx / usable, y: colH[c], z: z++, r: TILTS[idx % TILTS.length] };
+      colH[c] += h + gap;
     });
 
     setPositions(next);
     try { localStorage.setItem(posKey, JSON.stringify(next)); } catch {}
     laidOut.current = true;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, notes]);
+  }, [loading, notes, boardW]);
 
   const persistPos = useCallback((next) => {
     try { localStorage.setItem(posKey, JSON.stringify(next)); } catch {}
@@ -118,21 +163,24 @@ export default function CollageBoard({ dashboardId, creatorName, onClose }) {
   // --- Drag con pointer capture (mouse + touch) ---
   const onPointerDown = (e, id) => {
     e.currentTarget.setPointerCapture(e.pointerId);
-    const cur = positions[id] || { x: 0, y: 0 };
-    drag.current = { id, startX: e.clientX, startY: e.clientY, origX: cur.x, origY: cur.y };
+    const usable = Math.max(1, boardW - noteW);
+    const cur = positions[id] || { fx: 0, y: 0 };
+    drag.current = {
+      id, startX: e.clientX, startY: e.clientY,
+      origXpx: (cur.fx ?? 0) * usable, origY: cur.y ?? 0, usable,
+    };
     bringToFront(id);
   };
 
   const onPointerMove = (e) => {
     const d = drag.current;
     if (!d) return;
-    const board = boardRef.current;
-    const maxX = board ? board.clientWidth - NOTE_W : 9999;
-    let x = d.origX + (e.clientX - d.startX);
+    let xPx = d.origXpx + (e.clientX - d.startX);
     let y = d.origY + (e.clientY - d.startY);
-    x = Math.max(0, Math.min(x, Math.max(0, maxX)));
+    xPx = Math.max(0, Math.min(xPx, d.usable)); // siempre dentro del board
     y = Math.max(0, y);
-    setPositions((p) => ({ ...p, [d.id]: { ...p[d.id], x, y } }));
+    const fx = xPx / d.usable;
+    setPositions((p) => ({ ...p, [d.id]: { ...p[d.id], fx, y } }));
   };
 
   const onPointerUp = () => {
@@ -173,12 +221,22 @@ export default function CollageBoard({ dashboardId, creatorName, onClose }) {
     }
   };
 
+  // Persiste el archivado en el servidor para ocultarla también del tendedero.
+  const persistHidden = (id, hidden) => {
+    fetch(`${API}/dashboard/${dashboardId}/collage/${id}`, {
+      method: "PATCH",
+      headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({ hidden }),
+    }).catch(() => {});
+  };
+
   const archiveNote = (e, id) => {
     e.preventDefault();
     e.stopPropagation();
     const next = { ...archived, [id]: true };
     setArchived(next);
     persistArch(next);
+    persistHidden(id, true);
   };
 
   const restoreNote = (id) => {
@@ -186,12 +244,15 @@ export default function CollageBoard({ dashboardId, creatorName, onClose }) {
     delete next[id];
     setArchived(next);
     persistArch(next);
+    persistHidden(id, false);
   };
 
   const visible = notes.filter((n) => !archived[n.id]);
   const archivedNotes = notes.filter((n) => archived[n.id]);
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <div className="collage-overlay">
       <div className="collage-topbar">
         <div className="collage-brand">
@@ -227,8 +288,10 @@ export default function CollageBoard({ dashboardId, creatorName, onClose }) {
         onPointerLeave={onPointerUp}
       >
         {visible.map((note, i) => {
-          const p = positions[note.id] || { x: 0, y: 0, z: 10 };
+          const p = positions[note.id] || { fx: 0, y: 0, z: 10 };
           const rot = p.r ?? TILTS[i % TILTS.length];
+          const usable = Math.max(1, boardW - noteW);
+          const xPx = Math.min((p.fx ?? 0) * usable, usable); // clamp: nunca fuera
           return (
             <div
               key={note.id}
@@ -237,7 +300,8 @@ export default function CollageBoard({ dashboardId, creatorName, onClose }) {
               onPointerDown={(e) => onPointerDown(e, note.id)}
               style={{
                 left: 0, top: 0,
-                transform: `translate(${p.x}px, ${p.y}px) rotate(${rot}deg)`,
+                width: noteW,
+                transform: `translate(${xPx}px, ${p.y}px) rotate(${rot}deg)`,
                 zIndex: p.z,
               }}
             >
@@ -287,6 +351,7 @@ export default function CollageBoard({ dashboardId, creatorName, onClose }) {
           </div>
         </div>
       )}
-    </div>
+    </div>,
+    document.body
   );
 }

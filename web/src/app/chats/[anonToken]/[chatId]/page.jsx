@@ -16,22 +16,24 @@ const CountdownTimer = ({ expiresAt, onExpire }) => {
 
   useEffect(() => {
     if (!expiresAt) return;
-    const interval = setInterval(() => {
-      const now = new Date();
-      const diff = expiresAt - now;
+    const tick = () => {
+      const diff = new Date(expiresAt) - new Date();
       if (diff <= 0) {
-        setTimeLeft("00:00");
-        clearInterval(interval);
+        setTimeLeft("00:00:00");
         if (onExpire) onExpire();
-      } else {
-        // Formato por día: HORAS:MINUTOS (ej. 24:00, 23:59...)
-        const totalMinutes = Math.ceil(diff / 60000);
-        const hours = Math.floor(totalMinutes / 60).toString().padStart(2, '0');
-        const minutes = (totalMinutes % 60).toString().padStart(2, '0');
-        setTimeLeft(`${hours}:${minutes}`);
-        setIsCritical(diff < 60 * 60000);
+        return false;
       }
-    }, 1000);
+      // Formato por día con segundos: HH:MM:SS (ej. 23:59:58...) — se ve que corre.
+      const totalSeconds = Math.floor(diff / 1000);
+      const hours = Math.floor(totalSeconds / 3600).toString().padStart(2, '0');
+      const minutes = Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, '0');
+      const seconds = (totalSeconds % 60).toString().padStart(2, '0');
+      setTimeLeft(`${hours}:${minutes}:${seconds}`);
+      setIsCritical(diff < 60 * 60000);
+      return true;
+    };
+    tick(); // mostrar de inmediato
+    const interval = setInterval(() => { if (!tick()) clearInterval(interval); }, 1000);
     return () => clearInterval(interval);
   }, [expiresAt, onExpire]);
 

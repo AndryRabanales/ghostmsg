@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import AnonMessageForm from "@/components/AnonMessageForm";
 import AnonChatsBadge from "@/components/AnonChatsBadge";
+import NotesClothesline from "@/components/NotesClothesline";
 import { isInAppBrowser, tryEscapeToRealBrowser } from "@/utils/inAppBrowser";
 import { openStore } from "@/utils/appStore";
 
@@ -148,6 +149,8 @@ export default function PublicUserPage() {
         messagePrompt={creatorInfo.messagePrompt}
         avatarUrl={creatorInfo.avatarUrl}
       />
+
+      <NotesClothesline publicId={publicId} />
 
       <a
         href="/descargar"
