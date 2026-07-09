@@ -252,51 +252,7 @@ export default function AnonMessageForm({
             ></textarea>
           </div>
 
-          {imageBase64 && (
-            <div className="media-preview">
-              {mediaType === 'video' ? (
-                <video src={imageBase64} controls />
-              ) : (
-                <img src={imageBase64} alt="Adjunto" />
-              )}
-            </div>
-          )}
-
-          <div className="form-toolbar">
-            <div>
-              <input
-                type="file"
-                accept="image/*,video/mp4,video/webm"
-                id="image-upload"
-                style={{ display: 'none' }}
-                onChange={handleFileChange}
-              />
-              {imageBase64 ? (
-                <label htmlFor="image-upload" className={attachChipClass}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                  {attachLabel}
-                  <button
-                    type="button"
-                    className="attach-remove"
-                    onClick={(e) => { e.preventDefault(); clearMedia(); }}
-                    aria-label="Quitar adjunto"
-                  >
-                    ✕
-                  </button>
-                </label>
-              ) : (
-                <label htmlFor="image-upload" className={attachChipClass}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                    <circle cx="8.5" cy="8.5" r="1.5" />
-                    <polyline points="21 15 16 10 5 21" />
-                  </svg>
-                  {attachLabel}
-                </label>
-              )}
-            </div>
+          <div className="form-toolbar form-toolbar--end">
             <div className={ringClass} title={`${charCount} / ${MAX_CHARS}`}>
               <svg width="34" height="34" viewBox="0 0 34 34">
                 <circle className="char-ring-track" cx="17" cy="17" r={RING_RADIUS} />
