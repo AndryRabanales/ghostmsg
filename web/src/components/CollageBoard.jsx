@@ -1,12 +1,13 @@
 // src/components/CollageBoard.jsx
 "use client";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useCallback } from "react";
 import { getAuthHeaders } from "@/utils/auth";
 
 const API = process.env.NEXT_PUBLIC_API || "https://api.ghostmsg.space";
 
 const TILTS = [-4, 3, -2, 4, -3, 2, -1.5, 3.5, -4.5, 1.5, -2.5, 4.5];
 const NOTE_W = 150;
+const GAP = 12;
 
 export default function CollageBoard({ dashboardId, creatorName, onClose }) {
   const [notes, setNotes] = useState([]);
@@ -17,6 +18,9 @@ export default function CollageBoard({ dashboardId, creatorName, onClose }) {
   const [showArchived, setShowArchived] = useState(false);
 
   const boardRef = useRef(null);
+  const noteRefs = useRef({});
+  const savedPosRef = useRef({});
+  const laidOut = useRef(false);
   const zTop = useRef(20);
   const drag = useRef(null);
 
@@ -28,7 +32,9 @@ export default function CollageBoard({ dashboardId, creatorName, onClose }) {
     let savedPos = {}, savedArch = {};
     try { savedPos = JSON.parse(localStorage.getItem(posKey) || "{}"); } catch {}
     try { savedArch = JSON.parse(localStorage.getItem(archKey) || "{}"); } catch {}
+    savedPosRef.current = savedPos;
     setArchived(savedArch);
+    setPositions(savedPos); // las notas ya arrastradas conservan su lugar
 
     const fetchNotes = async () => {
       try {
@@ -37,22 +43,8 @@ export default function CollageBoard({ dashboardId, creatorName, onClose }) {
         });
         if (!res.ok) throw new Error("No se pudo cargar el collage.");
         const data = await res.json();
-        setNotes(data);
-
-        // Posición inicial compacta y superpuesta (si no hay guardada).
-        const cols = 3;
-        const pos = {};
-        data.forEach((n, i) => {
-          if (savedPos[n.id]) { pos[n.id] = savedPos[n.id]; return; }
-          const col = i % cols, row = Math.floor(i / cols);
-          pos[n.id] = {
-            x: col * 118 + (Math.random() * 20 - 10),
-            y: row * 78 + (Math.random() * 16 - 8),
-            z: 10 + i,
-          };
-        });
         zTop.current = 20 + data.length;
-        setPositions(pos);
+        setNotes(data);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -62,6 +54,39 @@ export default function CollageBoard({ dashboardId, creatorName, onClose }) {
     fetchNotes();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dashboardId]);
+
+  // --- Layout ordenado (masonry) por defecto, midiendo alturas reales ---
+  useLayoutEffect(() => {
+    if (loading || notes.length === 0 || laidOut.current) return;
+    const board = boardRef.current;
+    if (!board) return;
+
+    const boardW = board.clientWidth;
+    const cols = Math.max(1, Math.floor((boardW + GAP) / (NOTE_W + GAP)));
+    const gridW = cols * NOTE_W + (cols - 1) * GAP;
+    const startX = Math.max(8, (boardW - gridW) / 2);
+    const colH = new Array(cols).fill(GAP);
+
+    const saved = savedPosRef.current || {};
+    const next = { ...saved };
+    let z = 10;
+
+    notes.forEach((n) => {
+      if (saved[n.id]) return; // respeta lo que el usuario ya movió
+      // columna más corta
+      let c = 0;
+      for (let i = 1; i < cols; i++) if (colH[i] < colH[c]) c = i;
+      const el = noteRefs.current[n.id];
+      const h = el ? el.offsetHeight : 96;
+      next[n.id] = { x: startX + c * (NOTE_W + GAP), y: colH[c], z: z++ };
+      colH[c] += h + GAP;
+    });
+
+    setPositions(next);
+    try { localStorage.setItem(posKey, JSON.stringify(next)); } catch {}
+    laidOut.current = true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, notes]);
 
   const persistPos = useCallback((next) => {
     try { localStorage.setItem(posKey, JSON.stringify(next)); } catch {}
@@ -140,7 +165,7 @@ export default function CollageBoard({ dashboardId, creatorName, onClose }) {
 
       <div className="collage-header">
         <h2 className="collage-title">Mensajes anónimos para {creatorName}</h2>
-        <p className="collage-hint">✋ Arrástralas y acomódalas · 📸 captura para tu historia</p>
+        <p className="collage-hint">✋ Puedes arrastrar las notas a tu gusto · 📸 captura para tu historia</p>
       </div>
 
       {loading && <p className="collage-state">Armando tu collage…</p>}
@@ -161,6 +186,7 @@ export default function CollageBoard({ dashboardId, creatorName, onClose }) {
           return (
             <div
               key={note.id}
+              ref={(el) => { noteRefs.current[note.id] = el; }}
               className="collage-note"
               onPointerDown={(e) => onPointerDown(e, note.id)}
               style={{
