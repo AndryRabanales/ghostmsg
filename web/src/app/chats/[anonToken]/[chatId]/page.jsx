@@ -64,6 +64,7 @@ export default function PublicChatPage() {
 
   const [expiresAt, setExpiresAt] = useState(null);
   const [creatorPublicId, setCreatorPublicId] = useState(null);
+  const [creatorAvatarUrl, setCreatorAvatarUrl] = useState(null);
 
   const bottomRef = useRef(null);
   const wsRef = useRef(null);
@@ -131,6 +132,9 @@ export default function PublicChatPage() {
 
           if (data.creatorPublicId) {
             setCreatorPublicId(data.creatorPublicId);
+          }
+          if (data.creatorAvatarUrl) {
+            setCreatorAvatarUrl(data.creatorAvatarUrl);
           }
 
           if (data.expiresAt) {
@@ -279,7 +283,9 @@ export default function PublicChatPage() {
         <div className="premium-chat-header">
           <div className="premium-chat-header-identity">
             <div className={`premium-chat-avatar ${creatorStatus.status === 'online' ? 'is-online' : ''}`}>
-              {(creatorName || "?").trim().charAt(0).toUpperCase()}
+              {creatorAvatarUrl
+                ? <img src={creatorAvatarUrl} alt={creatorName} />
+                : (creatorName || "?").trim().charAt(0).toUpperCase()}
             </div>
             <div className="premium-chat-header-nametext">
               <h3>{creatorName}</h3>

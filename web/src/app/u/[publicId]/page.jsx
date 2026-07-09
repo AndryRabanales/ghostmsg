@@ -88,6 +88,7 @@ export default function PublicUserPage() {
         creatorName={creatorInfo.creatorName}
         aliasPrompt={creatorInfo.aliasPrompt}
         messagePrompt={creatorInfo.messagePrompt}
+        avatarUrl={creatorInfo.avatarUrl}
       />
 
       <a href="/" className="anon-cta">

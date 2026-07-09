@@ -13,8 +13,40 @@ export default function EditProfile({ creator, onSaved }) {
   const [name, setName] = useState(creator?.name || "");
   const [aliasPrompt, setAliasPrompt] = useState(creator?.aliasPrompt || "");
   const [messagePrompt, setMessagePrompt] = useState(creator?.messagePrompt || "");
+  const [avatarUrl, setAvatarUrl] = useState(creator?.avatarUrl || null);
   const [status, setStatus] = useState("idle"); // idle | saving | saved | error
   const [errorMsg, setErrorMsg] = useState("");
+
+  const handlePhoto = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setErrorMsg("Selecciona una imagen.");
+      setStatus("error");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.onload = () => {
+        // Recorta al centro en un cuadrado y comprime (avatar pequeño).
+        const size = 256;
+        const canvas = document.createElement("canvas");
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext("2d");
+        const side = Math.min(img.width, img.height);
+        const sx = (img.width - side) / 2;
+        const sy = (img.height - side) / 2;
+        ctx.drawImage(img, sx, sy, side, side, 0, 0, size, size);
+        setAvatarUrl(canvas.toDataURL("image/jpeg", 0.72));
+        setStatus("idle");
+        setErrorMsg("");
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -33,6 +65,7 @@ export default function EditProfile({ creator, onSaved }) {
           name: name.trim(),
           aliasPrompt: aliasPrompt.trim(),
           messagePrompt: messagePrompt.trim(),
+          avatarUrl: avatarUrl,
         }),
       });
       const data = await res.json();
@@ -69,6 +102,27 @@ export default function EditProfile({ creator, onSaved }) {
       </div>
 
       <form onSubmit={handleSave} className="edit-profile-form">
+        <div className="edit-profile-photo-row">
+          <div className="edit-profile-photo">
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="Tu foto" />
+            ) : (
+              <span>{(name || "?").trim().charAt(0).toUpperCase()}</span>
+            )}
+          </div>
+          <div className="edit-profile-photo-actions">
+            <label className="edit-profile-photo-btn">
+              {avatarUrl ? "Cambiar foto" : "Subir foto"}
+              <input type="file" accept="image/*" onChange={handlePhoto} style={{ display: "none" }} />
+            </label>
+            {avatarUrl && (
+              <button type="button" className="edit-profile-photo-remove" onClick={() => setAvatarUrl(null)}>
+                Quitar
+              </button>
+            )}
+          </div>
+        </div>
+
         <label className="edit-profile-label">
           Tu nombre
           <input

@@ -1567,6 +1567,7 @@ body {
   height: 48px;
   min-width: 48px;
   border-radius: 50%;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1575,6 +1576,12 @@ body {
   color: #fff;
   background: linear-gradient(135deg, #8e2de2, #4a00e0);
   box-shadow: 0 0 0 3px rgba(142, 45, 226, 0.15), 0 6px 16px rgba(74, 0, 224, 0.35);
+}
+
+.anon-form-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .anon-form-header-text h1 {
@@ -3909,6 +3916,13 @@ textarea.form-input-field.attention-pulse {
   box-shadow: 0 4px 14px rgba(139, 92, 246, 0.4);
 }
 
+.premium-chat-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
 .premium-chat-avatar::after {
   content: "";
   position: absolute;
@@ -4497,6 +4511,72 @@ textarea.form-input-field.attention-pulse {
   display: flex;
   flex-direction: column;
   gap: 18px;
+}
+
+.edit-profile-photo-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.edit-profile-photo {
+  width: 68px;
+  height: 68px;
+  min-width: 68px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, #8e2de2, #4a00e0);
+  box-shadow: 0 0 0 3px rgba(142, 45, 226, 0.15), 0 8px 18px rgba(74, 0, 224, 0.35);
+}
+
+.edit-profile-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.edit-profile-photo-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.edit-profile-photo-btn {
+  padding: 9px 15px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #c9a4ff;
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.edit-profile-photo-btn:hover {
+  background: rgba(142, 45, 226, 0.15);
+  border-color: rgba(201, 164, 255, 0.4);
+}
+
+.edit-profile-photo-remove {
+  background: none;
+  border: none;
+  color: rgba(235, 235, 245, 0.5);
+  font-family: 'Outfit', sans-serif;
+  font-size: 12.5px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.edit-profile-photo-remove:hover {
+  color: #f87171;
 }
 
 .edit-profile-label {

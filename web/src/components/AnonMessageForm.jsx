@@ -12,7 +12,8 @@ export default function AnonMessageForm({
   onChatCreated,
   creatorName,
   aliasPrompt,
-  messagePrompt
+  messagePrompt,
+  avatarUrl
 }) {
   const aliasPlaceholder = aliasPrompt || "Ej. Fan secreto, Vecino curioso...";
   const messagePlaceholder = messagePrompt || "Dime qué piensas de mí...";
@@ -201,7 +202,9 @@ export default function AnonMessageForm({
   return (
     <div className="anon-form-container mounted" ref={cardRef} onMouseMove={handleSpotlight}>
       <div className="anon-form-header">
-        <div className="anon-form-avatar">{initial}</div>
+        <div className="anon-form-avatar">
+          {avatarUrl ? <img src={avatarUrl} alt={creatorName} /> : initial}
+        </div>
         <div className="anon-form-header-text">
           <h1>Enviar a {creatorName}</h1>
           <span>🔒 100% anónimo</span>
