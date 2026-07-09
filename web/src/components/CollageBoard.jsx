@@ -92,6 +92,20 @@ export default function CollageBoard({ dashboardId, creatorName, onClose }) {
         const merged = { ...savedArch, ...serverArch };
         setArchived(merged);
         try { localStorage.setItem(archKey, JSON.stringify(merged)); } catch {}
+
+        // Sincroniza al servidor las notas que estaban archivadas SOLO en
+        // localStorage (de antes de que el archivado fuera persistente), para
+        // que también se oculten del tendedero público de los anónimos.
+        data.forEach((n) => {
+          if (merged[n.id] && !n.hidden) {
+            fetch(`${API}/dashboard/${dashboardId}/collage/${n.id}`, {
+              method: "PATCH",
+              headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
+              body: JSON.stringify({ hidden: true }),
+            }).catch(() => {});
+          }
+        });
+
         setNotes(data);
       } catch (err) {
         setError(err.message);
