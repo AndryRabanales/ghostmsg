@@ -4,7 +4,6 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { refreshToken, getAuthHeaders } from "@/utils/auth";
 import MessageList from "@/components/MessageList";
-import DashboardInfo from "@/components/DashboardInfo";
 import EditProfile from "@/components/EditProfile";
 import ShareLinkGuideModal from "@/components/ShareLinkGuideModal";
 
@@ -110,11 +109,7 @@ export default function DashboardPage() {
 
                 {!loading && creator && (
                     <div>
-                        <div className="fade-in-up" style={{ animationDelay: '0.1s' }}>
-                            <DashboardInfo creator={creator} onChange={setCreator} />
-                        </div>
-
-                        <div className="fade-in-up" style={{ animationDelay: '0.2s', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                        <div className="fade-in-up" style={{ animationDelay: '0.1s', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                             <button className="dashboard-share-btn" onClick={() => setShowShareGuideModal(true)}>
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" /><polyline points="16 6 12 2 8 6" /><line x1="12" y1="2" x2="12" y2="15" />
