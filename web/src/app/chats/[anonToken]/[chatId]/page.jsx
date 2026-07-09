@@ -276,7 +276,6 @@ export default function PublicChatPage() {
 
   return (
     <div className="premium-chat-layout">
-      <AnonChatsBadge newMessagePublicId={creatorPublicId} currentChatId={chatId} />
       <div className="premium-chat-container">
 
         <div className="premium-chat-header">
@@ -301,6 +300,7 @@ export default function PublicChatPage() {
           </div>
           <div className="premium-chat-header-actions">
             <CountdownTimer expiresAt={expiresAt} onExpire={handleExpire} />
+            <AnonChatsBadge newMessagePublicId={creatorPublicId} currentChatId={chatId} inline />
           </div>
         </div>
 

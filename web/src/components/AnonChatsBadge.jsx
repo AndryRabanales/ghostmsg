@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
  * ha creado. Al tocarla, despliega la lista de sus chats y un acceso para
  * escribir un mensaje nuevo. Lee de localStorage.myChats.
  */
-export default function AnonChatsBadge({ newMessagePublicId, currentChatId }) {
+export default function AnonChatsBadge({ newMessagePublicId, currentChatId, inline }) {
   const router = useRouter();
   const [chats, setChats] = useState([]);
   const [open, setOpen] = useState(false);
@@ -32,7 +32,7 @@ export default function AnonChatsBadge({ newMessagePublicId, currentChatId }) {
   };
 
   return (
-    <div className="anon-badge-wrap">
+    <div className={`anon-badge-wrap ${inline ? "is-inline" : ""}`}>
       <button className="anon-badge" onClick={() => setOpen((v) => !v)} aria-label="Mis chats">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />

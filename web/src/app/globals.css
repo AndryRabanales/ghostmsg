@@ -5308,6 +5308,24 @@ textarea.form-input-field.attention-pulse {
   font-family: 'Outfit', sans-serif;
 }
 
+/* En línea dentro del header del chat (no flota, no tapa el timer) */
+.anon-badge-wrap.is-inline {
+  position: relative;
+  top: auto;
+  right: auto;
+  z-index: 20;
+  flex-shrink: 0;
+}
+
+.anon-badge-wrap.is-inline .anon-badge {
+  width: 38px;
+  height: 38px;
+}
+
+.anon-badge-wrap.is-inline .anon-badge-panel {
+  top: 46px;
+}
+
 .anon-badge {
   position: relative;
   display: flex;
