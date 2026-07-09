@@ -1,26 +1,27 @@
 // src/components/NotifyMeButton.jsx
 "use client";
 import { useEffect, useState } from "react";
-import { isPushSupported, subscribeToPush } from "@/utils/pushNotifications";
+import { isPushSupported, subscribeToPush, isIos, isStandalone } from "@/utils/pushNotifications";
 
 export default function NotifyMeButton({ anonToken, chatId }) {
-  const [supported, setSupported] = useState(true);
+  const [mode, setMode] = useState("hidden"); // hidden | button | ios-hint
   const [status, setStatus] = useState("idle"); // idle | loading | subscribed | error
   const [errorMsg, setErrorMsg] = useState("");
+  const [showIosHelp, setShowIosHelp] = useState(false);
 
   useEffect(() => {
-    setSupported(isPushSupported());
-    if (isPushSupported() && Notification.permission === "granted") {
-      // Ya tenía permiso concedido de una visita anterior; re-registra en silencio.
-      subscribeToPush(anonToken, chatId).then(() => setStatus("subscribed")).catch(() => {});
+    if (isPushSupported()) {
+      setMode("button");
+      if (Notification.permission === "granted") {
+        subscribeToPush(anonToken, chatId).then(() => setStatus("subscribed")).catch(() => {});
+      }
+    } else if (isIos() && !isStandalone()) {
+      // iOS solo permite push si la página está en la pantalla de inicio.
+      setMode("ios-hint");
+    } else {
+      setMode("hidden");
     }
   }, [anonToken, chatId]);
-
-  if (!supported || status === "subscribed") return supported && status === "subscribed" ? (
-    <div className="notify-me-chip is-subscribed">
-      🔔 Te avisaremos cuando responda
-    </div>
-  ) : null;
 
   const handleClick = async () => {
     setStatus("loading");
@@ -33,6 +34,32 @@ export default function NotifyMeButton({ anonToken, chatId }) {
       setStatus("error");
     }
   };
+
+  if (mode === "hidden") return null;
+
+  if (status === "subscribed") {
+    return (
+      <div className="notify-me-wrap">
+        <div className="notify-me-chip is-subscribed">🔔 Te avisaremos cuando responda</div>
+      </div>
+    );
+  }
+
+  if (mode === "ios-hint") {
+    return (
+      <div className="notify-me-wrap">
+        <button type="button" className="notify-me-chip" onClick={() => setShowIosHelp((v) => !v)}>
+          🔔 Recibir avisos de respuesta
+        </button>
+        {showIosHelp && (
+          <div className="notify-me-ios-help">
+            En iPhone, toca <strong>Compartir</strong> <span aria-hidden>􀈂</span> y luego{" "}
+            <strong>“Agregar a inicio”</strong>. Abre GhostMsg desde el ícono y podrás activar los avisos.
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="notify-me-wrap">

@@ -17,6 +17,23 @@ export function isPushSupported() {
   );
 }
 
+// iOS (iPhone/iPad) — incluye iPadOS que se hace pasar por Mac con touch.
+export function isIos() {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent || "";
+  return /iPad|iPhone|iPod/.test(ua) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
+
+// ¿La página está abierta como app instalada (pantalla de inicio)?
+export function isStandalone() {
+  if (typeof window === "undefined") return false;
+  return (
+    window.matchMedia?.("(display-mode: standalone)").matches ||
+    window.navigator.standalone === true
+  );
+}
+
 export async function subscribeToPush(anonToken, chatId) {
   if (!isPushSupported()) {
     throw new Error("Tu navegador no soporta notificaciones.");

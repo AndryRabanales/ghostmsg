@@ -4298,6 +4298,24 @@ textarea.form-input-field.attention-pulse {
   color: #f87171;
 }
 
+.notify-me-ios-help {
+  margin-top: 10px;
+  max-width: 320px;
+  text-align: center;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: rgba(235, 235, 245, 0.75);
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.28);
+  border-radius: 12px;
+  padding: 10px 14px;
+  animation: fadeInUp 0.35s ease forwards;
+}
+
+.notify-me-ios-help strong {
+  color: #c9a4ff;
+}
+
 /* --- Compactación para móvil --- */
 @media (max-width: 480px) {
   .premium-chat-header {
