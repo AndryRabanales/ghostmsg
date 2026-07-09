@@ -306,7 +306,7 @@ export default function PublicChatPage() {
 
         <div className="return-reminder">
           <span className="return-reminder-text">
-            💜 Guarda este enlace y vuelve para ver si <b>{creatorName}</b> te respondió.
+            💜 Guarda este enlace y ábrelo en tu navegador para ver si te respondieron.
           </span>
           <button className="return-reminder-btn" onClick={copyPageUrl}>
             {linkCopied ? "¡Copiado! ✓" : "Copiar enlace"}
