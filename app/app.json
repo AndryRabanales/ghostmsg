@@ -1,29 +1,79 @@
 {
   "expo": {
-    "name": "app",
-    "slug": "app",
+    "name": "GhostMsg",
+    "slug": "ghostmsg",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "scheme": "ghostmsg",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0d0c16",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#0d0c16"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false,
+      "bundleIdentifier": "com.ghostmsg.app",
+      "associatedDomains": [
+        "applinks:ghost-web-production.up.railway.app"
+      ]
     },
     "android": {
+      "package": "com.ghostmsg.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#0d0c16"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "ghost-web-production.up.railway.app",
+              "pathPrefix": "/u"
+            },
+            {
+              "scheme": "https",
+              "host": "ghost-web-production.up.railway.app",
+              "pathPrefix": "/chats"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-web-browser",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "GhostMsg usa tus fotos solo para tu foto de perfil."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#8e2de2"
+        }
+      ]
+    ],
+    "extra": {
+      "apiUrl": "https://api.ghostmsg.space",
+      "webUrl": "https://ghost-web-production.up.railway.app",
+      "googleWebClientId": "139854990044-ihq8knm8q3nk39vc5oebuorikdc01u14.apps.googleusercontent.com",
+      "googleIosClientId": "",
+      "googleAndroidClientId": ""
     }
   }
 }
