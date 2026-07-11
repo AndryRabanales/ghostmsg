@@ -3965,7 +3965,7 @@ textarea.form-input-field.attention-pulse {
   display: flex;
   flex-direction: column;
   position: fixed;
-  top: 0;
+  top: var(--app-top, 0px);
   left: 0;
   right: 0;
   height: 100vh;
@@ -5445,7 +5445,13 @@ textarea.form-input-field.attention-pulse {
 
 .collage-overlay {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh; /* iOS: respeta la barra dinámica del navegador */
   z-index: 1100;
   font-family: 'Outfit', sans-serif;
   display: flex;

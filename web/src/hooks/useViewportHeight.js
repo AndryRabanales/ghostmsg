@@ -18,9 +18,17 @@ export function useViewportHeight() {
   useEffect(() => {
     const root = document.documentElement;
     const body = document.body;
+    const vv = window.visualViewport;
 
+    // Usamos el visualViewport: en iOS, al abrir el teclado, window.innerHeight
+    // NO cambia, pero visualViewport.height sí baja al área visible. Así el chat
+    // se encoge justo sobre el teclado (header + mensajes + input a la vista),
+    // en vez de dejar el input tapado y que iOS empuje todo hacia arriba.
     const setHeight = () => {
-      root.style.setProperty("--app-height", `${window.innerHeight}px`);
+      const h = vv ? vv.height : window.innerHeight;
+      const top = vv ? vv.offsetTop : 0;
+      root.style.setProperty("--app-height", `${h}px`);
+      root.style.setProperty("--app-top", `${top}px`);
     };
     setHeight();
 
@@ -35,15 +43,17 @@ export function useViewportHeight() {
 
     window.addEventListener("resize", setHeight);
     window.addEventListener("orientationchange", setHeight);
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener("resize", setHeight);
+    if (vv) {
+      vv.addEventListener("resize", setHeight);
+      vv.addEventListener("scroll", setHeight); // offsetTop cambia al desplazarse
     }
 
     return () => {
       window.removeEventListener("resize", setHeight);
       window.removeEventListener("orientationchange", setHeight);
-      if (window.visualViewport) {
-        window.visualViewport.removeEventListener("resize", setHeight);
+      if (vv) {
+        vv.removeEventListener("resize", setHeight);
+        vv.removeEventListener("scroll", setHeight);
       }
       root.style.overflow = prev.rootOverflow;
       body.style.overflow = prev.bodyOverflow;

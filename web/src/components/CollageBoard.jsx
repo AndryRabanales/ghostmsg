@@ -117,38 +117,52 @@ export default function CollageBoard({ dashboardId, creatorName, onClose }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dashboardId]);
 
-  // --- Layout ordenado (masonry) por defecto, midiendo alturas reales ---
+  // --- Layout ordenado (masonry): coloca TODA nota que aún no tenga lugar ---
+  // Se ejecuta también cuando llegan notas nuevas: las acomoda en columnas
+  // DEBAJO de las ya colocadas, para que nunca queden encimadas.
   useLayoutEffect(() => {
-    if (loading || notes.length === 0 || laidOut.current || !boardW) return;
+    if (loading || notes.length === 0 || !boardW) return;
+
+    // Notas sin posición (primera vez o recién llegadas).
+    const needing = notes.filter((n) => !positions[n.id]);
+    if (needing.length === 0) return;
 
     const cols = Math.max(1, Math.floor((boardW + gap) / (noteW + gap)));
     const gridW = cols * noteW + (cols - 1) * gap;
     const startX = Math.max(8, (boardW - gridW) / 2);
-    const colH = new Array(cols).fill(gap);
     const usable = Math.max(1, boardW - noteW); // rango horizontal para fx
 
-    const saved = savedPosRef.current || {};
-    const next = { ...saved };
-    let z = 10;
+    // Empieza a apilar debajo de lo que ya está colocado (evita encimar).
+    let baseBottom = 0;
+    notes.forEach((n) => {
+      const p = positions[n.id];
+      if (!p) return;
+      const el = noteRefs.current[n.id];
+      baseBottom = Math.max(baseBottom, p.y + (el ? el.offsetHeight : 96));
+    });
+    const colH = new Array(cols).fill(baseBottom > 0 ? baseBottom + gap : gap);
 
-    notes.forEach((n, idx) => {
-      if (saved[n.id]) return; // respeta lo que el usuario ya movió
+    const next = { ...positions };
+    let z = zTop.current;
+    let tiltI = Object.keys(next).length;
+
+    needing.forEach((n) => {
       // columna más corta
       let c = 0;
       for (let i = 1; i < cols; i++) if (colH[i] < colH[c]) c = i;
       const el = noteRefs.current[n.id];
       const h = el ? el.offsetHeight : 96;
       const xPx = startX + c * (noteW + gap);
-      next[n.id] = { fx: xPx / usable, y: colH[c], z: z++, r: TILTS[idx % TILTS.length] };
+      next[n.id] = { fx: xPx / usable, y: colH[c], z: z++, r: TILTS[tiltI++ % TILTS.length] };
       colH[c] += h + gap;
     });
+    zTop.current = z;
 
     setPositions(next);
     try { localStorage.setItem(posKey, JSON.stringify(next)); } catch {}
-    laidOut.current = true;
-    persistOrder(next); // guarda el orden inicial en el servidor
+    persistOrder(next);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, notes, boardW]);
+  }, [loading, notes, boardW, positions]);
 
   const persistPos = useCallback((next) => {
     try { localStorage.setItem(posKey, JSON.stringify(next)); } catch {}
