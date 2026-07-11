@@ -73,7 +73,10 @@
       "webUrl": "https://ghost-web-production.up.railway.app",
       "googleWebClientId": "139854990044-ihq8knm8q3nk39vc5oebuorikdc01u14.apps.googleusercontent.com",
       "googleIosClientId": "",
-      "googleAndroidClientId": ""
+      "googleAndroidClientId": "",
+      "eas": {
+        "projectId": "e1fd5cc4-3df3-4162-85c8-348b5f52cfc2"
+      }
     }
   }
 }
