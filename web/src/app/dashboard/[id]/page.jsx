@@ -55,6 +55,13 @@ export default function DashboardPage() {
                 fetch(`${API}/dashboard/${id}/chats`, { headers, cache: 'no-store' })
             ]);
 
+            // 404 en /creators/me = la cuenta fue eliminada (p. ej. desde
+            // /eliminar-cuenta): la sesión ya no apunta a nada, cerrarla.
+            if (meRes.status === 404) {
+                handleAuthFailure();
+                return;
+            }
+
             if (meRes.status === 401 || chatsRes.status === 401) {
                 const publicId = localStorage.getItem("publicId");
                 if (publicId) {
