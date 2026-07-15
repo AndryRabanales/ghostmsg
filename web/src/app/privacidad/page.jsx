@@ -41,7 +41,9 @@ export default function Privacidad() {
       <p style={S.p}>
         Los chats anónimos expiran y se eliminan automáticamente 24 horas después de
         su creación. Puedes borrar chats manualmente en cualquier momento. Para
-        eliminar tu cuenta y todos tus datos, escríbenos al correo de contacto.
+        eliminar tu cuenta y todos tus datos de forma permanente, visita{" "}
+        <b>ghost-web-production.up.railway.app/eliminar-cuenta</b>, donde puedes
+        solicitarlo tú mismo verificando tu identidad con Google.
       </p>
 
       <h2 style={S.h2}>5. Moderación y seguridad</h2>

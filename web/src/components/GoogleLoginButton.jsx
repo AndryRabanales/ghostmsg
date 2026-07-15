@@ -6,12 +6,12 @@ import Script from "next/script";
 const API = process.env.NEXT_PUBLIC_API || "https://api.ghostmsg.space";
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
-export default function GoogleLoginButton({ onSuccess, onError }) {
+export default function GoogleLoginButton({ onSuccess, onError, endpoint = "/auth/google", text = "continue_with" }) {
   const buttonRef = useRef(null);
 
   const handleCredential = async (response) => {
     try {
-      const res = await fetch(`${API}/auth/google`, {
+      const res = await fetch(`${API}${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ credential: response.credential }),
@@ -35,14 +35,15 @@ export default function GoogleLoginButton({ onSuccess, onError }) {
       shape: "pill",
       size: "large",
       width: 290,
-      text: "continue_with",
+      text,
       logo_alignment: "left",
     });
   };
 
   useEffect(() => {
     if (window.google) renderButton();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [endpoint]);
 
   if (!GOOGLE_CLIENT_ID) return null;
 
