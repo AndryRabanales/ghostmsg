@@ -6,14 +6,19 @@ import Constants from "expo-constants";
 import { API_URL } from "./config";
 
 // Comportamiento en primer plano: muestra banner + suena (2.6).
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-});
+// Envuelto en try/catch: nunca debe tumbar el arranque de la app.
+try {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowBanner: true,
+      shouldShowList: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+    }),
+  });
+} catch {
+  // sin notificaciones: la app sigue funcionando
+}
 
 /** Canal Android (requerido para que suenen y aparezcan). */
 async function ensureAndroidChannel() {

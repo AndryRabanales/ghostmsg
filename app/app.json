@@ -1,14 +1,14 @@
 {
   "expo": {
     "name": "GhostMsg",
-    "slug": "ghostmsg",
+    "slug": "andry",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "ghostmsg",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#0d0c16",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
